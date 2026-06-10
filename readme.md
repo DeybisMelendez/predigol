@@ -1,65 +1,143 @@
-# Mundial
+# Mundial - Juego de Pronósticos Copa del Mundo
 
-Este es un minijuego que permite jugar a adivinar los resultados de los partidos de la copa del mundo.
+> Mini juego web para adivinar los resultados de los partidos de la Copa del Mundo y competir por el primer lugar en el ranking.
 
-Si aciertas ganas puntos y hay un tablero de clasificación general para ver quien tiene mas puntos.
+## Características
 
-Utilizamos la api de https://www.football-data.org
+- **Pronósticos en tiempo real**: Predice los resultados de los partidos antes de que inicien
+- **Sistema de puntos dinámico**: Gana puntos según la precisión de tus pronósticos
+- **Tabla de clasificación**: Compite con otros usuarios en el leaderboard general
+- **Estadísticas detalladas**: Ricketts, exactos, precisión y más
+- **Sincronización automática**: Los partidos se actualizan desde la API de football-data.org
+- **Diseño responsive**: Interfaz limpia y moderna construida con Pico CSS
 
-Script de ejemplo:
+## Requisitos
 
-import requests
-from dotenv import load_dotenv
+- Python 3.10+
+- Django 6.0
+- API Key de [football-data.org](https://www.football-data.org)
 
-load_dotenv(dotenv_path=".secret")
-FOOTBALL_DATA_KEY = os.environ.get("DJANGO_DEBUG", "")
+## Instalación
 
-class FootballDataAPI:
-    BASE_URL = "https://api.football-data.org/v4"
+1. **Clonar el repositorio**
+```bash
+git clone <repo-url>
+cd mundial
+```
 
-    def __init__(self, api_key):
-        self.headers = {
-            "X-Auth-Token": api_key
-        }
+2. **Crear y activar entorno virtual**
+```bash
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# venv\Scripts\activate   # Windows
+```
 
-    def _get(self, endpoint, params=None):
-        url = f"{self.BASE_URL}/{endpoint}"
+3. **Instalar dependencias**
+```bash
+pip install django python-dotenv requests
+```
 
-        response = requests.get(
-            url,
-            headers=self.headers,
-            params=params
-        )
+4. **Configurar variables de entorno**
 
-        response.raise_for_status()
+Crear archivo `.secret` en la raíz del proyecto:
+```bash
+DJANGO_DEBUG=True
+DJANGO_SECRET_KEY=tu-clave-secreta-aqui
+FOOTBALL_DATA_API_KEY=tu-api-key-de-football-data
+```
 
-        return response.json()
+5. **Aplicar migraciones**
+```bash
+python manage.py migrate
+```
 
-    def upcoming_matches(self, competition="WC", limit=10):
-        """
-        Próximos partidos.
-        WC = World Cup
-        """
+6. **Crear superusuario (opcional)**
+```bash
+python manage.py createsuperuser
+```
 
-        data = self._get(
-            f"competitions/{competition}/matches",
-            {
-                "status": "SCHEDULED"
-            }
-        )
+7. **Iniciar el servidor**
+```bash
+python manage.py runserver
+```
 
-        return data["matches"][:limit]
+8. **Sincronizar partidos**
+```bash
+python manage.py sync_matches
+```
 
-    def finished_matches(self, competition="WC", limit=10):
-        """
-        Últimos resultados.
-        """
+## Comandos de Gestión
 
-        data = self._get(
-            f"competitions/{competition}/matches",
-            {
-                "status": "FINISHED"
-            }
-        )
+| Comando | Descripción |
+|---------|-------------|
+| `python manage.py runserver` | Iniciar servidor de desarrollo |
+| `python manage.py sync_matches` | Sincronizar partidos desde la API |
+| `python manage.py calculate_points` | Calcular puntos de partidos finalizados |
+| `python manage.py shell` | Abrir shell de Django |
+| `python manage.py createsuperuser` | Crear administrador |
 
-        return data["matches"][-limit:]
+## Sistema de Puntos
+
+| Resultado | Puntos | Descripción |
+|-----------|--------|-------------|
+| Marcador exacto | 3 pts | Acertar el resultado exacto (ej: 2-1) |
+| Resultado | 2 pts | Acertar quién gana o si hay empate, pero no el marcador |
+| Cantidad de goles de un equipo | 1 pt | Acertar la cantidad de goles de solo un equipo |
+
+## Arquitectura
+
+```
+mundial/
+├── core/                    # Configuración del proyecto Django
+│   ├── settings.py
+│   └── urls.py
+├── worldcup/                # Aplicación principal
+│   ├── models.py           # Match, Prediction, PlayerStats
+│   ├── views.py            # Vistas y endpoints API
+│   ├── services.py         # Cliente de API externa
+│   └── management/commands/
+│       ├── sync_matches.py
+│       └── calculate_points.py
+├── templates/              # Plantillas HTML
+│   ├── base.html
+│   ├── dashboard.html
+│   ├── leaderboard.html
+│   ├── match_detail.html
+│   ├── profile.html
+│   └── user_predictions.html
+├── db.sqlite3              # Base de datos
+├── manage.py
+└── .secret                 # Variables de entorno (no commitear)
+```
+
+## API Externa
+
+Este proyecto utiliza la API de [football-data.org](https://api.football-data.org/v4).
+
+- Competencia: Copa del Mundo (código: `WC`)
+- Endpoints principales:
+  - Lista de partidos: `GET /v4/competitions/WC/matches`
+  - Detalle de partido: `GET /v4/matches/{id}`
+
+## Vistas Principales
+
+| Ruta | Descripción |
+|------|-------------|
+| `/` | Dashboard con partidos próximos y completados |
+| `/leaderboard/` | Tabla de clasificación general |
+| `/matches/<id>/` | Detalle de un partido con pronósticos |
+| `/predictions/` | Mis pronósticos |
+| `/profile/` | Mi perfil y estadísticas |
+| `/admin/` | Panel de administración Django |
+
+## Tecnologías
+
+- **Backend**: Django 6.0, Python 3.10+
+- **Base de datos**: SQLite
+- **Frontend**: HTML5, Pico CSS
+- **API externa**: football-data.org
+- **Gestión de configuración**: python-dotenv
+
+## Licencia
+
+MIT License
