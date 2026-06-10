@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Mi Perfil - Mundial 2026{% endblock %}
+
+{% block content %}
+<section>
+    <div class="profile-header">
+        <h3>{{ user.username }}</h3>
+        {% if position %}
+        <p style="color: #666; font-size: 0.9rem;">Posición #{{ position }} de {{ total_users }}</p>
+        {% endif %}
+    </div>
+
+    <div style="display: flex; gap: 10px; justify-content: center;">
+        <a href="{% url 'user_predictions_by_username' user.username %}" class="button">Ver Pronósticos</a>
+        <form action="{% url 'logout' %}" method="post" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="secondary">Cerrar Sesión</button>
+        </form>
+    </div>
+</section>
+{% endblock %}

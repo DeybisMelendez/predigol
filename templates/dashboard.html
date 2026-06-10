@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+
+{% block title %}Partidos - Mundial 2026{% endblock %}
+
+{% block content %}
+<nav class="tabs" style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 2px solid #eee;">
+    <button class="tab active" data-tab="upcoming" style="padding: 0.75rem 1.5rem; border: none; background: none; cursor: pointer; font-size: 1rem; font-weight: 600; color: var(--primary); border-bottom: 3px solid var(--primary); margin-bottom: -2px;">
+        Próximos Partidos
+    </button>
+    <button class="tab" data-tab="history" style="padding: 0.75rem 1.5rem; border: none; background: none; cursor: pointer; font-size: 1rem; font-weight: 600; color: #666; border-bottom: 3px solid transparent; margin-bottom: -2px;">
+        Historial
+    </button>
+</nav>
+
+<div id="upcoming" class="tab-content">
+    {% if upcoming_matches_by_date %}
+        {% for day in upcoming_matches_by_date %}
+        <div class="date-group" style="margin-bottom: 1.5rem;">
+            <h3 style="color: var(--primary); border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
+                📅 {{ day.label }}
+            </h3>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Hora</th>
+                            <th>Partido</th>
+                            <th>Fase</th>
+                            <th>Pronóstico</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for match in day.matches %}
+                        <tr>
+                            <td>
+                                <small style="color: #666;">{{ match.datetime|date:"H:i" }}</small>
+                            </td>
+                            <td>
+                                <a href="{% url 'match_detail' match.id %}" style="text-decoration: none; color: inherit;">
+                                    <img src="{{ match.home_team_crest }}" class="team-crest" alt="{{ match.home_team }}" onerror="this.style.display='none'">
+                                    {{ match.home_team }}
+                                    <span class="match-vs">vs</span>
+                                    {{ match.away_team }}
+                                    <img src="{{ match.away_team_crest }}" class="team-crest" alt="{{ match.away_team }}" onerror="this.style.display='none'">
+                                </a>
+                            </td>
+                            <td>
+                                <span class="badge badge-stage">{{ match.get_stage_display }}</span>
+                                {% if match.group %}
+                                    <span class="badge badge-group">Grupo {{ match.group }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if match.user_prediction %}
+                                    <span class="score-display">{{ match.user_prediction.home_goals }} - {{ match.user_prediction.away_goals }}</span>
+                                {% else %}
+                                    <span style="color: #999;">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="predict-btn secondary" data-match-id="{{ match.id }}" data-home="{{ match.home_team }}" data-away="{{ match.away_team }}">
+                                    {{ match.user_prediction|yesno:"Actualizar,Pronosticar" }}
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p>No hay partidos programados.</p>
+    {% endif %}
+</div>
+
+<div id="history" class="tab-content" style="display: none;">
+    {% if finished_matches %}
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Partido</th>
+                        <th>Resultado</th>
+                        <th>Goles</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for match in finished_matches %}
+                    <tr>
+                        <td>
+                            {{ match.datetime|date:"M d" }}<br>
+                            <small style="color: #666;">{{ match.datetime|date:"H:i" }}</small>
+                        </td>
+                        <td>
+                            <a href="{% url 'match_detail' match.id %}" style="text-decoration: none; color: inherit;">
+                                <img src="{{ match.home_team_crest }}" class="team-crest" alt="{{ match.home_team }}" onerror="this.style.display='none'">
+                                {{ match.home_team }}
+                                <span class="match-vs">vs</span>
+                                {{ match.away_team }}
+                                <img src="{{ match.away_team_crest }}" class="team-crest" alt="{{ match.away_team }}" onerror="this.style.display='none'">
+                            </a>
+                        </td>
+                        <td>
+                            <span class="score-display">{{ match.home_score }} - {{ match.away_score }}</span>
+                        </td>
+                        <td>
+                            {% if match.goals %}
+                                {% for goal in match.goals %}
+                                    <span class="goal-scorer">
+                                        <span class="minute">{{ goal.minute }}'</span>
+                                        {{ goal.scorer.name }}
+                                        {% if goal.assist %}
+                                            <small>({{ goal.assist.name }})</small>
+                                        {% endif %}
+                                    </span><br>
+                                {% endfor %}
+                            {% else %}
+                                <span style="color: #999;">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p>No hay partidos jugados.</p>
+    {% endif %}
+</div>
+
+{% if user.is_authenticated %}
+<dialog id="predict-dialog">
+    <article>
+        <h3 id="dialog-title">Hacer Pronóstico</h3>
+        <form id="predict-form">
+            <input type="hidden" id="match-id" name="match_id">
+            <div class="grid">
+                <label for="home-goals">
+                    <span id="home-team-label">Local</span>
+                    <input type="number" id="home-goals" name="home_goals" min="0" max="20" required>
+                </label>
+                <label for="away-goals">
+                    <span id="away-team-label">Visitante</span>
+                    <input type="number" id="away-goals" name="away_goals" min="0" max="20" required>
+                </label>
+            </div>
+            <button type="submit">Guardar Pronóstico</button>
+            <button type="button" class="secondary" onclick="document.getElementById('predict-dialog').removeAttribute('open')">Cancelar</button>
+        </form>
+    </article>
+</dialog>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tabs = document.querySelectorAll('.tab');
+    const contents = document.querySelectorAll('.tab-content');
+
+    function activateTab(tabName) {
+        tabs.forEach(function(t) {
+            if (t.dataset.tab === tabName) {
+                t.classList.add('active');
+                t.style.color = 'var(--primary)';
+                t.style.borderBottomColor = 'var(--primary)';
+            } else {
+                t.classList.remove('active');
+                t.style.color = '#666';
+                t.style.borderBottomColor = 'transparent';
+            }
+        });
+        contents.forEach(function(c) {
+            c.style.display = c.id === tabName ? 'block' : 'none';
+        });
+        history.replaceState(null, '', '#' + tabName);
+    }
+
+    tabs.forEach(function(tab) {
+        tab.addEventListener('click', function() {
+            activateTab(this.dataset.tab);
+        });
+    });
+
+    var hash = window.location.hash.slice(1);
+    if (hash === 'upcoming' || hash === 'history') {
+        activateTab(hash);
+    }
+});
+</script>
+
+{% if user.is_authenticated %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dialog = document.getElementById('predict-dialog');
+    if (!dialog) return;
+
+    document.querySelectorAll('.predict-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const matchId = this.dataset.matchId;
+            const home = this.dataset.home;
+            const away = this.dataset.away;
+
+            document.getElementById('match-id').value = matchId;
+            document.getElementById('home-team-label').textContent = home;
+            document.getElementById('away-team-label').textContent = away;
+            document.getElementById('dialog-title').textContent = home + ' vs ' + away;
+            document.getElementById('home-goals').value = '';
+            document.getElementById('away-goals').value = '';
+
+            dialog.setAttribute('open', '');
+        });
+    });
+
+    document.getElementById('predict-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const matchId = document.getElementById('match-id').value;
+        const homeGoals = document.getElementById('home-goals').value;
+        const awayGoals = document.getElementById('away-goals').value;
+
+        fetch('/api/predict/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': window.csrfToken
+            },
+            body: JSON.stringify({
+                match_id: matchId,
+                home_goals: parseInt(homeGoals),
+                away_goals: parseInt(awayGoals)
+            })
+        })
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+            if (data.success) {
+                dialog.removeAttribute('open');
+                location.reload();
+            } else {
+                alert(data.error || 'Error al guardar');
+            }
+        })
+        .catch(function(error) {
+            alert('Error: ' + error);
+        });
+    });
+});
+</script>
+{% endif %}
+{% endblock %}

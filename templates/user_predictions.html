@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Pronósticos de {{ profile_user.username }} - Mundial 2026{% endblock %}
+
+{% block content %}
+<section>
+    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+        <h2 style="margin: 0;">Pronósticos de {{ profile_user.username }}</h2>
+        {% if is_own %}
+            <span class="badge" style="background: #3366cc; color: #fff;">Tu cuenta</span>
+        {% endif %}
+    </div>
+
+    {% if predictions %}
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Partido</th>
+                        <th>Pronóstico</th>
+                        <th>Resultado</th>
+                        <th>Puntos</th>
+                        <th>Fecha</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in predictions %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'match_detail' p.match.id %}" style="text-decoration: none; color: inherit;">
+                                <img src="{{ p.match.home_team_crest }}" class="team-crest" alt="{{ p.match.home_team }}" onerror="this.style.display='none'">
+                                {{ p.match.home_team }}
+                                <span class="match-vs">vs</span>
+                                {{ p.match.away_team }}
+                                <img src="{{ p.match.away_team_crest }}" class="team-crest" alt="{{ p.match.away_team }}" onerror="this.style.display='none'">
+                            </a>
+                            <br>
+                            <small>
+                                <span class="badge badge-stage" style="font-size: 0.65rem; padding: 2px 6px;">{{ p.match.get_stage_display }}</span>
+                                {% if p.match.group %}
+                                    <span class="badge badge-group" style="font-size: 0.65rem; padding: 2px 6px;">{{ p.match.group }}</span>
+                                {% endif %}
+                            </small>
+                        </td>
+                        <td><span class="score-display">{{ p.home_goals }} - {{ p.away_goals }}</span></td>
+                        <td>
+                            {% if p.match.is_finished %}
+                                <span class="score-display">{{ p.match.home_score }} - {{ p.match.away_score }}</span>
+                            {% else %}
+                                <span style="color: #999;">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if p.match.is_finished %}
+                                <strong>{{ p.points }} pts</strong>
+                            {% else %}
+                                <span style="color: #999;">Pendiente</span>
+                            {% endif %}
+                        </td>
+                        <td style="white-space: nowrap;">{{ p.created_at|date:"M d, H:i" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p>No hay pronósticos para este usuario aún.</p>
+    {% endif %}
+</section>
+{% endblock %}
