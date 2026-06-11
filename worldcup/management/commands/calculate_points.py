@@ -1,18 +1,49 @@
 from django.core.management.base import BaseCommand
-from django.db.models import Count
 from worldcup.models import Match, Prediction, PlayerStats
 
 
 class Command(BaseCommand):
-    help = 'Calculate points for all predictions based on finished matches'
+    help = 'Calculate points for predictions based on finished matches'
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--uncalculated-only',
+            action='store_true',
+            default=True,
+            help='Only update predictions with points=0 (default: True)'
+        )
+        parser.add_argument(
+            '--all',
+            action='store_true',
+            help='Recalculate all predictions regardless of current points'
+        )
+        parser.add_argument(
+            '--match-id',
+            type=int,
+            help='Only calculate points for a specific match ID'
+        )
 
     def handle(self, *args, **options):
-        finished_matches = Match.objects.filter(status='FINISHED')
+        uncalculated_only = options.get('uncalculated_only', True)
+        recalculate_all = options.get('all', False)
+        match_id = options.get('match_id')
+
+        if recalculate_all:
+            uncalculated_only = False
+
+        query = Match.objects.filter(status='FINISHED')
+        if match_id:
+            query = query.filter(id=match_id)
+
+        finished_matches = query
         updated_count = 0
 
         for match in finished_matches:
-            predictions = Prediction.objects.filter(match=match)
-            for prediction in predictions:
+            pred_query = Prediction.objects.filter(match=match)
+            if uncalculated_only and not recalculate_all:
+                pred_query = pred_query.filter(points=0)
+
+            for prediction in pred_query:
                 old_points = prediction.points
                 prediction.calculate_points()
                 if old_points != prediction.points:

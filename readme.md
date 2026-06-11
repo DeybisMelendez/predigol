@@ -61,9 +61,10 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
-8. **Sincronizar partidos**
+8. **Sincronizar partidos y calcular puntos**
 ```bash
 python manage.py sync_matches
+python manage.py calculate_points
 ```
 
 ## Comandos de Gestión

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load team_translations %}
 
 {% block title %}Pronósticos de {{ profile_user.username }} - Mundial 2026{% endblock %}
 
@@ -28,11 +29,11 @@
                     <tr>
                         <td>
                             <a href="{% url 'match_detail' p.match.id %}" style="text-decoration: none; color: inherit;">
-                                <img src="{{ p.match.home_team_crest }}" class="team-crest" alt="{{ p.match.home_team }}" onerror="this.style.display='none'">
-                                {{ p.match.home_team }}
+                                <img src="{{ p.match.home_team_crest }}" class="team-crest" alt="{{ p.match.home_team|team_name_spanish }}" onerror="this.style.display='none'">
+                                {{ p.match.home_team|team_name_spanish }}
                                 <span class="match-vs">vs</span>
-                                {{ p.match.away_team }}
-                                <img src="{{ p.match.away_team_crest }}" class="team-crest" alt="{{ p.match.away_team }}" onerror="this.style.display='none'">
+                                {{ p.match.away_team|team_name_spanish }}
+                                <img src="{{ p.match.away_team_crest }}" class="team-crest" alt="{{ p.match.away_team|team_name_spanish }}" onerror="this.style.display='none'">
                             </a>
                             <br>
                             <small>

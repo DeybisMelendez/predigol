@@ -1,18 +1,19 @@
 {% extends "base.html" %}
+{% load team_translations %}
 
-{% block title %}{{ match.home_team }} vs {{ match.away_team }} - Mundial 2026{% endblock %}
+{% block title %}{{ match.home_team|team_name_spanish }} vs {{ match.away_team|team_name_spanish }} - Mundial 2026{% endblock %}
 
 {% block content %}
 <section>
-    <h2 style="text-align: center; margin-bottom: 5px;">{{ match.home_team }} vs {{ match.away_team }}</h2>
+    <h2 style="text-align: center; margin-bottom: 5px;">{{ match.home_team|team_name_spanish }} vs {{ match.away_team|team_name_spanish }}</h2>
     <div style="text-align: center; margin-bottom: 25px;">
-        <img src="{{ match.home_team_crest }}" class="team-crest-lg" alt="{{ match.home_team }}" onerror="this.style.display='none'">
+        <img src="{{ match.home_team_crest }}" class="team-crest-lg" alt="{{ match.home_team|team_name_spanish }}" onerror="this.style.display='none'">
         {% if match.is_finished %}
             <span class="score-display" style="font-size: 2.5rem; margin: 0 20px;">{{ match.home_score }} - {{ match.away_score }}</span>
         {% else %}
             <span style="font-size: 1.5rem; color: #666; margin: 0 20px;">vs</span>
         {% endif %}
-        <img src="{{ match.away_team_crest }}" class="team-crest-lg" alt="{{ match.away_team }}" onerror="this.style.display='none'">
+        <img src="{{ match.away_team_crest }}" class="team-crest-lg" alt="{{ match.away_team|team_name_spanish }}" onerror="this.style.display='none'">
     </div>
     <article style="text-align: center;">
         <dl style="display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; margin: 0;">
@@ -52,7 +53,7 @@
 
 {% if not match.is_finished and user.is_authenticated %}
 <section style="text-align: center; margin: 1.5rem 0;">
-    <button class="predict-btn secondary" data-match-id="{{ match.id }}" data-home="{{ match.home_team }}" data-away="{{ match.away_team }}">
+    <button class="predict-btn secondary" data-match-id="{{ match.id }}" data-home="{{ match.home_team|team_name_spanish }}" data-away="{{ match.away_team|team_name_spanish }}">
         {{ user_prediction|yesno:"Actualizar Pronóstico,Hacer Pronóstico" }}
     </button>
 </section>
@@ -70,9 +71,9 @@
                     <span class="event-minute">{{ goal.minute }}'</span>
                     <span>{{ goal.scorer.name }}</span>
                     {% if goal.team.name == match.home_team %}
-                        <small>({{ match.home_team }})</small>
+                        <small>({{ match.home_team|team_name_spanish }})</small>
                     {% else %}
-                        <small>({{ match.away_team }})</small>
+                        <small>({{ match.away_team|team_name_spanish }})</small>
                     {% endif %}
                     {% if goal.assist %}
                         <br><small style="margin-left: 38px; color: #888;">Asistencia: {{ goal.assist.name }}</small>
@@ -90,9 +91,9 @@
                     <span class="event-minute">{{ booking.minute }}'</span>
                     <span>{{ booking.player.name }}</span>
                     {% if booking.team.name == match.home_team %}
-                        <small>({{ match.home_team }})</small>
+                        <small>({{ match.home_team|team_name_spanish }})</small>
                     {% else %}
-                        <small>({{ match.away_team }})</small>
+                        <small>({{ match.away_team|team_name_spanish }})</small>
                     {% endif %}
                     {% if booking.card == 'RED' %}
                         <span style="color: #e94560;">Roja</span>
@@ -112,9 +113,9 @@
                     <div>
                         <span class="event-minute">{{ sub.minute }}'</span>
                         {% if sub.team.name == match.home_team %}
-                            <strong>{{ match.home_team }}</strong>
+                            <strong>{{ match.home_team|team_name_spanish }}</strong>
                         {% else %}
-                            <strong>{{ match.away_team }}</strong>
+                            <strong>{{ match.away_team|team_name_spanish }}</strong>
                         {% endif %}
                     </div>
                     <div style="margin-left: 38px; font-size: 0.85rem;">
@@ -137,8 +138,8 @@
     <div class="lineup-grid">
         <div class="lineup-section">
             <h4>
-                <img src="{{ match.home_team_crest }}" class="team-crest" alt="{{ match.home_team }}" onerror="this.style.display='none'">
-                {{ match.home_team }}
+                <img src="{{ match.home_team_crest }}" class="team-crest" alt="{{ match.home_team|team_name_spanish }}" onerror="this.style.display='none'">
+                {{ match.home_team|team_name_spanish }}
             </h4>
             {% if match.home_formation %}
             <p style="color: var(--primary); font-weight: 600; margin: 0 0 10px 0;">Formación: {{ match.home_formation }}</p>
@@ -162,8 +163,8 @@
         </div>
         <div class="lineup-section">
             <h4>
-                <img src="{{ match.away_team_crest }}" class="team-crest" alt="{{ match.away_team }}" onerror="this.style.display='none'">
-                {{ match.away_team }}
+                <img src="{{ match.away_team_crest }}" class="team-crest" alt="{{ match.away_team|team_name_spanish }}" onerror="this.style.display='none'">
+                {{ match.away_team|team_name_spanish }}
             </h4>
             {% if match.away_formation %}
             <p style="color: var(--primary); font-weight: 600; margin: 0 0 10px 0;">Formación: {{ match.away_formation }}</p>
@@ -195,7 +196,7 @@
     <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px;">
         {% if match.home_bench %}
         <div class="card">
-            <h4>{{ match.home_team }}</h4>
+            <h4>{{ match.home_team|team_name_spanish }}</h4>
             <ul class="player-list">
                 {% for player in match.home_bench %}
                     <li>
@@ -211,7 +212,7 @@
         {% endif %}
         {% if match.away_bench %}
         <div class="card">
-            <h4>{{ match.away_team }}</h4>
+            <h4>{{ match.away_team|team_name_spanish }}</h4>
             <ul class="player-list">
                 {% for player in match.away_bench %}
                     <li>

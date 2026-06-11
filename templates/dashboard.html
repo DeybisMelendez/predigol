@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load team_translations %}
 
 {% block title %}Partidos - Mundial 2026{% endblock %}
 
@@ -38,11 +39,11 @@
                             </td>
                             <td>
                                 <a href="{% url 'match_detail' match.id %}" style="text-decoration: none; color: inherit;">
-                                    <img src="{{ match.home_team_crest }}" class="team-crest" alt="{{ match.home_team }}" onerror="this.style.display='none'">
-                                    {{ match.home_team }}
+                                    <img src="{{ match.home_team_crest }}" class="team-crest" alt="{{ match.home_team|team_name_spanish }}" onerror="this.style.display='none'">
+                                    {{ match.home_team|team_name_spanish }}
                                     <span class="match-vs">vs</span>
-                                    {{ match.away_team }}
-                                    <img src="{{ match.away_team_crest }}" class="team-crest" alt="{{ match.away_team }}" onerror="this.style.display='none'">
+                                    {{ match.away_team|team_name_spanish }}
+                                    <img src="{{ match.away_team_crest }}" class="team-crest" alt="{{ match.away_team|team_name_spanish }}" onerror="this.style.display='none'">
                                 </a>
                             </td>
                             <td>
@@ -59,9 +60,15 @@
                                 {% endif %}
                             </td>
                             <td>
-                                <button class="predict-btn secondary" data-match-id="{{ match.id }}" data-home="{{ match.home_team }}" data-away="{{ match.away_team }}">
-                                    {{ match.user_prediction|yesno:"Actualizar,Pronosticar" }}
-                                </button>
+                                {% if match.status == 'SCHEDULED' or match.status == 'TIMED' %}
+                                    <button class="predict-btn secondary" data-match-id="{{ match.id }}" data-home="{{ match.home_team|team_name_spanish }}" data-away="{{ match.away_team|team_name_spanish }}">
+                                        {{ match.user_prediction|yesno:"Actualizar,Pronosticar" }}
+                                    </button>
+                                {% else %}
+                                    <span style="background: #e0e0e0; color: #666; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">
+                                        {% if match.status == 'IN_PLAY' %}En juego{% elif match.status == 'PAUSED' %}Pausado{% elif match.status == 'FINISHED' %}Finalizado{% else %}{{ match.get_status_display }}{% endif %}
+                                    </span>
+                                {% endif %}
                             </td>
                         </tr>
                         {% endfor %}
@@ -96,11 +103,11 @@
                         </td>
                         <td>
                             <a href="{% url 'match_detail' match.id %}" style="text-decoration: none; color: inherit;">
-                                <img src="{{ match.home_team_crest }}" class="team-crest" alt="{{ match.home_team }}" onerror="this.style.display='none'">
-                                {{ match.home_team }}
+                                <img src="{{ match.home_team_crest }}" class="team-crest" alt="{{ match.home_team|team_name_spanish }}" onerror="this.style.display='none'">
+                                {{ match.home_team|team_name_spanish }}
                                 <span class="match-vs">vs</span>
-                                {{ match.away_team }}
-                                <img src="{{ match.away_team_crest }}" class="team-crest" alt="{{ match.away_team }}" onerror="this.style.display='none'">
+                                {{ match.away_team|team_name_spanish }}
+                                <img src="{{ match.away_team_crest }}" class="team-crest" alt="{{ match.away_team|team_name_spanish }}" onerror="this.style.display='none'">
                             </a>
                         </td>
                         <td>
