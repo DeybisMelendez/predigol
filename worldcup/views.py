@@ -45,7 +45,7 @@ def get_date_label(match_date, today):
 
 def dashboard(request):
     today = timezone.localdate()
-    upcoming_matches = Match.objects.filter(status__in=['SCHEDULED', 'TIMED']).order_by('datetime')
+    upcoming_matches = Match.objects.filter(status__in=['SCHEDULED', 'TIMED', 'IN_PLAY', 'PAUSED']).order_by('datetime')
     finished_matches = Match.objects.filter(status='FINISHED').order_by('-datetime')
 
     user_predictions = {}

@@ -51,12 +51,14 @@
     </article>
 </section>
 
-{% if not match.is_finished and user.is_authenticated %}
+{% if user.is_authenticated %}
+    {% if match.status == 'SCHEDULED' or match.status == 'TIMED' %}
 <section style="text-align: center; margin: 1.5rem 0;">
     <button class="predict-btn secondary" data-match-id="{{ match.id }}" data-home="{{ match.home_team|team_name_spanish }}" data-away="{{ match.away_team|team_name_spanish }}">
         {{ user_prediction|yesno:"Actualizar Pronóstico,Hacer Pronóstico" }}
     </button>
 </section>
+    {% endif %}
 {% endif %}
 
 {% if match.goals or match.bookings or match.substitutions %}
