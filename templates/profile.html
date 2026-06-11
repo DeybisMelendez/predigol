@@ -18,5 +18,129 @@
             <button type="submit" class="secondary">Cerrar Sesión</button>
         </form>
     </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert {% if message.tags == 'error' %}alert-red{% elif message.tags == 'success' %}alert-green{% else %}alert-yellow{% endif %}" role="alert" style="margin-top: 15px;">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card" style="margin-top: 25px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h4 style="margin: 0;">👥 Mis Amigos ({{ friend_count }})</h4>
+            <button onclick="generateInvite()" id="generateBtn" class="secondary" style="margin: 0;">
+                {% if invite_url %}Nuevo Enlace{% else %}Generar Enlace{% endif %}
+            </button>
+        </div>
+
+        {% if invite_url %}
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <input type="text" id="inviteLink" value="{{ invite_url }}" readonly style="flex: 1; font-size: 0.85rem;">
+                <button onclick="copyInvite()" class="secondary">Copiar</button>
+            </div>
+        {% endif %}
+
+        {% if friends_data %}
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Amigo</th>
+                            <th>Puntos</th>
+                            <th>Desde</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for f in friends_data %}
+                        <tr>
+                            <td>{{ f.rank }}</td>
+                            <td><a href="{% url 'user_predictions_by_username' f.username %}">{{ f.username }}</a></td>
+                            <td><strong>{{ f.total_points }}</strong></td>
+                            <td style="color: var(--pico-muted-color);">{% if f.created_at %}{{ f.created_at|date:"d M Y" }}{% endif %}</td>
+                            <td>
+                                <form action="{% url 'remove_friend' f.username %}" method="POST" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="secondary" style="padding: 4px 10px; font-size: 0.75rem;" onclick="return confirm('¿Eliminar a {{ f.username }} de tus amigos?')">Eliminar</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p style="text-align: center; color: var(--pico-muted-color); padding: 15px 0;">
+                No tienes amigos aún. ¡Genera un enlace e invita a alguien!
+            </p>
+        {% endif %}
+    </div>
 </section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function generateInvite() {
+    const btn = document.getElementById('generateBtn');
+    btn.disabled = true;
+    btn.textContent = 'Generando...';
+
+    fetch('{% url "generate_invite" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.invite_url) {
+            let input = document.getElementById('inviteLink');
+            if (!input) {
+                input = document.createElement('input');
+                input.type = 'text';
+                input.id = 'inviteLink';
+                input.readOnly = true;
+                input.style.flex = '1';
+                input.style.fontSize = '0.85rem';
+                const container = btn.closest('.card').querySelector('div');
+                container.parentNode.insertBefore(input, container.nextSibling);
+            }
+            input.value = data.invite_url;
+        }
+        location.reload();
+    })
+    .catch(() => {
+        btn.disabled = false;
+        btn.textContent = 'Error';
+    });
+}
+
+function copyInvite() {
+    const input = document.getElementById('inviteLink');
+    input.select();
+    document.execCommand('copy');
+    const btn = document.querySelector('button[onclick="copyInvite()"]');
+    btn.textContent = '¡Copiado!';
+    setTimeout(() => btn.textContent = 'Copiar', 2000);
+}
+</script>
 {% endblock %}

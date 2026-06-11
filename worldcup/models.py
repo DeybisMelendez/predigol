@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 
 class Match(models.Model):
@@ -119,3 +120,43 @@ class PlayerStats(models.Model):
     winner_count = models.IntegerField(default=0)
     goals_count = models.IntegerField(default=0)
     accuracy = models.FloatField(default=0)
+
+
+class Friendship(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='friendships')
+    friend = models.ForeignKey(User, on_delete=models.CASCADE, related_name='friend_of')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['user', 'friend']
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.friend.username}"
+
+
+class InvitationCode(models.Model):
+    code = models.CharField(max_length=12, unique=True)
+    creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='invitations_sent')
+    used_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='invitations_received')
+    used_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.code} - {self.creator.username}"
+
+    @property
+    def is_expired(self):
+        return timezone.now() > self.expires_at
+
+    @property
+    def is_used(self):
+        return self.used_by is not None
+
+    @property
+    def is_valid(self):
+        return not self.is_expired and not self.is_used

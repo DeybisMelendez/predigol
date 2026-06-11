@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.utils import timezone
 from datetime import timedelta, date
 from collections import defaultdict
-from .models import Match, Prediction, PlayerStats
+from .models import Match, Prediction, PlayerStats, Friendship, InvitationCode
 
 MATCH_START_BUFFER = timedelta(minutes=5)
 
@@ -129,9 +129,39 @@ def profile(request):
             position = i
             break
 
+    friends = Friendship.objects.filter(user=request.user).select_related('friend')
+    friend_count = friends.count()
+    active_codes = InvitationCode.objects.filter(creator=request.user, used_by__isnull=True, expires_at__gt=timezone.now())
+    invite_url = None
+    if active_codes.exists():
+        invite_url = request.build_absolute_uri(f'/friends/invite/{active_codes.first().code}/')
+
+    friend_ids = Friendship.objects.filter(user=request.user).values_list('friend_id', flat=True)
+    friends_with_points = (
+        User.objects
+        .filter(id__in=friend_ids)
+        .annotate(total_points=Sum('prediction__points'))
+        .order_by('-total_points', 'username')
+    )
+
+    friends_data = []
+    for i, friend in enumerate(friends_with_points, 1):
+        friendship = next((f for f in friends if f.friend_id == friend.id), None)
+        friends_data.append({
+            'rank': i,
+            'username': friend.username,
+            'friend_id': friend.id,
+            'total_points': friend.total_points or 0,
+            'created_at': friendship.created_at if friendship else None,
+        })
+
     context = {
         'position': position,
         'total_users': total_users,
+        'friends': friends,
+        'friend_count': friend_count,
+        'invite_url': invite_url,
+        'friends_data': friends_data,
     }
     return render(request, 'profile.html', context)
 
@@ -215,3 +245,53 @@ def signup_view(request):
         return redirect('dashboard')
 
     return render(request, 'registration/signup.html')
+
+
+def generate_invite(request):
+    import secrets
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Unauthorized'}, status=401)
+    if request.method == 'POST':
+        InvitationCode.objects.filter(creator=request.user, used_by__isnull=True).delete()
+        code = secrets.token_urlsafe(8)[:12]
+        expires_at = timezone.now() + timedelta(days=7)
+        InvitationCode.objects.create(
+            code=code,
+            creator=request.user,
+            expires_at=expires_at
+        )
+        invite_url = request.build_absolute_uri(f'/friends/invite/{code}/')
+        return JsonResponse({'invite_url': invite_url})
+    return JsonResponse({'error': 'Invalid method'}, status=405)
+
+
+def accept_invite(request, code):
+    inv = get_object_or_404(InvitationCode, code=code)
+    if request.method == 'POST' and request.user.is_authenticated:
+        if inv.is_expired:
+            messages.error(request, 'Este enlace ha expirado.')
+            return redirect('profile')
+        if request.user == inv.creator:
+            messages.error(request, 'No puedes usar tu propio enlace de invitación.')
+            return redirect('profile')
+        if Friendship.objects.filter(user=request.user, friend=inv.creator).exists():
+            messages.info(request, 'Ya son amigos.')
+            return redirect('profile')
+        Friendship.objects.create(user=request.user, friend=inv.creator)
+        Friendship.objects.create(user=inv.creator, friend=request.user)
+        inv.used_by = request.user
+        inv.used_at = timezone.now()
+        inv.save()
+        messages.success(request, f'{inv.creator.username} agregado a tus amigos!')
+        return redirect('profile')
+    return render(request, 'invite.html', {'inv': inv, 'code': code})
+
+
+@login_required
+def remove_friend(request, username):
+    if request.method == 'POST':
+        friend = get_object_or_404(User, username=username)
+        Friendship.objects.filter(user=request.user, friend=friend).delete()
+        Friendship.objects.filter(user=friend, friend=request.user).delete()
+        messages.success(request, f'{username} eliminado de tus amigos.')
+    return redirect('profile')

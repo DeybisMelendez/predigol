@@ -241,8 +241,8 @@
         <ul>
             {% if user.is_authenticated %}
                 <li><a href="{% url 'dashboard' %}">Partidos</a></li>
-                <li><a href="{% url 'profile' %}">Mi Perfil</a></li>
                 <li><a href="{% url 'leaderboard' %}">Clasificación</a></li>
+                <li><a href="{% url 'profile' %}">Mi Perfil</a></li>
             {% else %}
                 <li><a href="{% url 'login' %}">Iniciar Sesión</a></li>
                 <li><a href="{% url 'signup' %}">Registrarse</a></li>

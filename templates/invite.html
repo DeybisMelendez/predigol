@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Invitación - Mundial 2026{% endblock %}
+
+{% block content %}
+<section style="max-width: 500px; margin: 0 auto; text-align: center;">
+    <div class="card">
+        <h2>¡Invitación de Amistad!</h2>
+        <p>{{ inv.creator.username }} te ha invitado a unirte a su tabla de amigos en Mundial 2026.</p>
+        <p>Podrán ver las predicciones del otro y competir en un ranking privado.</p>
+
+        {% if user.is_authenticated %}
+            <form method="POST" action="{% url 'accept_invite' code %}">
+                {% csrf_token %}
+                <button type="submit" style="margin-top: 20px;">Aceptar Invitación</button>
+            </form>
+        {% else %}
+            <p style="margin-top: 20px;">
+                <a href="/accounts/login/?next=/friends/invite/{{ code }}/" class="primary">Inicia Sesión para Acceptar</a>
+            </p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
