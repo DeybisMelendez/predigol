@@ -9,7 +9,7 @@ import time
 import os
 
 
-load_dotenv(dotenv_path=".secret")
+load_dotenv(dotenv_path=str(settings.BASE_DIR / ".secret"))
 logger = logging.getLogger(__name__)
 
 RATE_LIMIT_REQUESTS = 10
@@ -55,7 +55,9 @@ class FootballDataAPI:
     INITIAL_DELAY = 2
 
     def __init__(self):
+        from django.conf import settings
         self.api_key = os.environ.get("FOOTBALL_DATA_API_KEY")
+        logger.info(f"FootballDataAPI init - API key: {'OK' if self.api_key else 'VACIA/NONE'}")
         self.headers = {"X-Auth-Token": self.api_key}
         self.rate_tracker = RateLimitTracker()
 
@@ -70,6 +72,7 @@ class FootballDataAPI:
         self._wait_for_rate_limit()
 
         url = f"{self.BASE_URL}/{endpoint}"
+        logger.debug(f"GET {url} | API key: {self.api_key[:4]}...{self.api_key[-4:] if self.api_key else 'NONE'}")
         try:
             response = requests.get(url, headers=self.headers, params=params)
             self.rate_tracker.record_request()
