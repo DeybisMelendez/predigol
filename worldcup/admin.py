@@ -35,14 +35,10 @@ class PredictionAdmin(admin.ModelAdmin):
 
 @admin.register(PlayerStats)
 class PlayerStatsAdmin(admin.ModelAdmin):
-    list_display = ['user', 'current_streak', 'longest_streak', 'total_predictions', 'exact_count', 'winner_count', 'accuracy_display']
+    list_display = ['user', 'total_points']
     search_fields = ['user__username']
-    ordering = ['-accuracy']
+    ordering = ['-total_points']
     raw_id_fields = ['user']
-
-    def accuracy_display(self, obj):
-        return f"{obj.accuracy:.1f}%"
-    accuracy_display.short_description = 'Precisión'
 
 
 @admin.register(Friendship)

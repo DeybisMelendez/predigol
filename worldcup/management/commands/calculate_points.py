@@ -62,45 +62,11 @@ class Command(BaseCommand):
             user_id = user_data['user']
             predictions = Prediction.objects.filter(user_id=user_id, match__status='FINISHED')
 
-            total = predictions.count()
-            if total == 0:
-                continue
-
-            exact = predictions.filter(points=3).count()
-            winner = predictions.filter(points=2).count()
-            goals = predictions.filter(points=1).count()
-
-            correct = exact + winner + goals
-            accuracy = round((correct / total) * 100, 1)
-
-            current_streak, longest_streak = self.calculate_streaks(predictions.order_by('match__datetime'))
+            total_points = sum(p.points for p in predictions)
 
             stats, created = PlayerStats.objects.get_or_create(user_id=user_id)
-            stats.total_predictions = total
-            stats.exact_count = exact
-            stats.winner_count = winner
-            stats.goals_count = goals
-            stats.accuracy = accuracy
-            stats.current_streak = current_streak
-            stats.longest_streak = longest_streak
+            stats.total_points = total_points
             stats.save()
 
             status = 'created' if created else 'updated'
-            self.stdout.write(f'PlayerStats {status} for user {user_id}')
-
-    def calculate_streaks(self, predictions):
-        current_streak = 0
-        longest_streak = 0
-        temp_streak = 0
-
-        for pred in predictions:
-            if pred.points > 0:
-                temp_streak += 1
-                if temp_streak > longest_streak:
-                    longest_streak = temp_streak
-            else:
-                temp_streak = 0
-
-        current_streak = temp_streak
-
-        return current_streak, longest_streak
+            self.stdout.write(f'PlayerStats {status} for user {user_id}: total_points={total_points}')

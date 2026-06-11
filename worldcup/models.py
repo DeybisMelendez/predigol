@@ -32,7 +32,7 @@ class Match(models.Model):
     away_team_crest = models.URLField(max_length=300, blank=True, null=True)
     datetime = models.DateTimeField()
     stage = models.CharField(max_length=20, choices=STAGE_CHOICES)
-    group = models.CharField(max_length=2, blank=True, null=True)
+    group = models.CharField(max_length=10, blank=True, null=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='SCHEDULED')
     home_score = models.IntegerField(blank=True, null=True)
     away_score = models.IntegerField(blank=True, null=True)
@@ -113,13 +113,7 @@ class Prediction(models.Model):
 
 class PlayerStats(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='stats')
-    current_streak = models.IntegerField(default=0)
-    longest_streak = models.IntegerField(default=0)
-    total_predictions = models.IntegerField(default=0)
-    exact_count = models.IntegerField(default=0)
-    winner_count = models.IntegerField(default=0)
-    goals_count = models.IntegerField(default=0)
-    accuracy = models.FloatField(default=0)
+    total_points = models.IntegerField(default=0)
 
 
 class Friendship(models.Model):

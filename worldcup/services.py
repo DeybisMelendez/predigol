@@ -129,6 +129,18 @@ class FootballDataAPI:
             home_score = match_data["score"]["fullTime"].get("home")
             away_score = match_data["score"]["fullTime"].get("away")
 
+        if home_score is None and away_score is None and match_data.get("status") == "FINISHED":
+            logger.info("Score is None for FINISHED match %s, fetching fresh data", match_data.get("id"))
+            try:
+                fresh_data = self.get_match(match_data["id"])
+                if fresh_data:
+                    fresh_score = fresh_data.get("score", {})
+                    home_score = fresh_score.get("fullTime", {}).get("home")
+                    away_score = fresh_score.get("fullTime", {}).get("away")
+                    logger.info("Fresh scores for match %s: %s-%s", match_data.get("id"), home_score, away_score)
+            except Exception as e:
+                logger.error("Error fetching fresh score for match %s: %s", match_data.get("id"), e)
+
         datetime_str = match_data["utcDate"]
         utc_dt = dt.fromisoformat(datetime_str.replace('Z', '+00:00'))
         converted_datetime = utc_dt.replace(tzinfo=timezone.UTC)
@@ -167,6 +179,16 @@ class FootballDataAPI:
         update_data = self._get_match_update_data(match_data)
         if not update_data:
             return None, None
+
+        existing_match = Match.objects.filter(match_id_externo=match_id_ext).first()
+        if existing_match and existing_match.status == 'FINISHED':
+            if existing_match.home_score is not None and existing_match.away_score is not None:
+                if update_data.get('home_score') is None and update_data.get('away_score') is None:
+                    logger.info("Preserving manual scores for FINISHED match %s: %s-%s",
+                               match_id_ext, existing_match.home_score, existing_match.away_score)
+                    update_data.pop('home_score', None)
+                    update_data.pop('away_score', None)
+
         match, created = Match.objects.update_or_create(
             match_id_externo=match_id_ext,
             defaults=update_data
