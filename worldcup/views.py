@@ -44,7 +44,7 @@ def get_date_label(match_date, today):
 
 
 def dashboard(request):
-    today = date.today()
+    today = timezone.localdate()
     upcoming_matches = Match.objects.filter(status__in=['SCHEDULED', 'TIMED']).order_by('datetime')
     finished_matches = Match.objects.filter(status='FINISHED').order_by('-datetime')
 
@@ -58,7 +58,7 @@ def dashboard(request):
 
     upcoming_by_date = defaultdict(list)
     for match in upcoming_matches:
-        match_date = match.datetime.date()
+        match_date = timezone.localtime(match.datetime).date()
         upcoming_by_date[match_date].append(match)
 
     sorted_dates = sorted(upcoming_by_date.keys())

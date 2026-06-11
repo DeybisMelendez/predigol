@@ -2,7 +2,7 @@ import requests
 from django.conf import settings
 from django.core.cache import cache
 from django.utils import timezone
-from datetime import datetime, timedelta, timezone as tz
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 import time
 
@@ -79,7 +79,8 @@ class FootballDataAPI:
                     skipped_count += 1
                     continue
                 datetime_str = match_data["utcDate"]
-                converted_datetime = convert_utc_to_managua(datetime_str)
+                utc_dt = datetime.fromisoformat(datetime_str.replace('Z', '+00:00'))
+                converted_datetime = utc_dt.replace(tzinfo=timezone.UTC)
                 stage = match_data["stage"]
                 group = match_data.get("group")
                 status = match_data["status"]
