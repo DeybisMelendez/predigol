@@ -4,8 +4,12 @@ from django.conf import settings
 from django.core.cache import cache
 from django.utils import timezone
 from datetime import timedelta, datetime
+from dotenv import load_dotenv
 import time
+import os
 
+
+load_dotenv(dotenv_path=".secret")
 logger = logging.getLogger(__name__)
 
 RATE_LIMIT_REQUESTS = 10
@@ -51,12 +55,8 @@ class FootballDataAPI:
     INITIAL_DELAY = 2
 
     def __init__(self):
-        self.api_key = getattr(settings, 'FOOTBALL_DATA_API_KEY', None)
-        if not self.api_key:
-            raise ValueError("FOOTBALL_DATA_API_KEY not configured in settings")
-        self.headers = {
-            "X-Auth-Token": self.api_key
-        }
+        self.api_key = os.environ.get("FOOTBALL_DATA_API_KEY")
+        self.headers = {"X-Auth-Token": self.api_key}
         self.rate_tracker = RateLimitTracker()
 
     def _wait_for_rate_limit(self):
