@@ -273,7 +273,13 @@
                     {% for p in predictions %}
                     <tr>
                         <td><a href="{% url 'user_predictions_by_username' p.user.username %}">{{ p.user.username }}</a></td>
-                        <td><span class="score-display">{{ p.home_goals }} - {{ p.away_goals }}</span></td>
+                        <td>
+                            {% if p.user == user or match.status == 'IN_PLAY' or match.status == 'PAUSED' or match.is_finished %}
+                                <span class="score-display">{{ p.home_goals }} - {{ p.away_goals }}</span>
+                            {% else %}
+                                <span class="prediction-added">✓ Pronóstico agregado</span>
+                            {% endif %}
+                        </td>
                         <td>
                             {% if match.is_finished %}
                                 <strong>{{ p.points }} pts</strong>
