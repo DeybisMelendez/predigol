@@ -43,7 +43,13 @@
                                 {% endif %}
                             </small>
                         </td>
-                        <td><span class="score-display">{{ p.home_goals }} - {{ p.away_goals }}</span></td>
+                        <td>
+                            {% if is_own or p.match.status == 'IN_PLAY' or p.match.status == 'PAUSED' or p.match.is_finished %}
+                                <span class="score-display">{{ p.home_goals }} - {{ p.away_goals }}</span>
+                            {% else %}
+                                <span class="prediction-added">✓ Pronóstico agregado</span>
+                            {% endif %}
+                        </td>
                         <td>
                             {% if p.match.is_finished %}
                                 <span class="score-display">{{ p.match.home_score }} - {{ p.match.away_score }}</span>
