@@ -1,0 +1,119 @@
+<div class="card profile-card">
+    <div class="profile-top">
+        <div class="profile-avatar">{{ stats_user.username|slice:":2"|upper }}</div>
+        <div class="profile-identity">
+            <h3>{{ stats_user.username }}</h3>
+            <div class="profile-meta">
+                Miembro desde {{ stats_user.date_joined|date:"M Y" }}
+                {% if is_own %}<span class="badge badge-own">Tu cuenta</span>{% endif %}
+            </div>
+        </div>
+        {% if position %}
+        <div class="rank-badge {% if position <= 3 %}top3{% endif %}">
+            #{{ position }} <small>de {{ total_users }}</small>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="points-hero">
+        <span class="pts">{{ user_stats.total_points }}</span>
+        <span class="lbl">Puntos totales acumulados</span>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-tile">
+            <span class="v">{{ user_stats.total_predictions }}</span>
+            <span class="l">Pronósticos realizados</span>
+        </div>
+        <div class="stat-tile">
+            <span class="v">{{ user_stats.finished_predictions }}</span>
+            <span class="l">Partidos finalizados</span>
+        </div>
+        <div class="stat-tile">
+            <span class="v">{{ user_stats.pending_predictions }}</span>
+            <span class="l">Pendientes por jugar</span>
+        </div>
+        <div class="stat-tile">
+            <span class="v">{{ user_stats.avg_points|floatformat:2 }}</span>
+            <span class="l">Promedio pts/pronóstico</span>
+        </div>
+    </div>
+
+    {% if user_stats.has_finished %}
+    <div class="stats-subsection">
+        <h5>Desglose de aciertos</h5>
+        <div class="breakdown-grid">
+            <div>
+                <div class="stats-grid" style="margin-bottom:0;">
+                    <div class="stat-tile">
+                        <span class="v" style="color:#e94560;">{{ user_stats.exact_hits }}</span>
+                        <span class="l">Marcador exacto · 3 pts</span>
+                    </div>
+                    <div class="stat-tile">
+                        <span class="v" style="color:#16213e;">{{ user_stats.result_hits }}</span>
+                        <span class="l">Resultado correcto · 2 pts</span>
+                    </div>
+                    <div class="stat-tile">
+                        <span class="v" style="color:#0f3460;">{{ user_stats.one_goal_hits }}</span>
+                        <span class="l">Un gol acertado · 1 pt</span>
+                    </div>
+                    <div class="stat-tile">
+                        <span class="v" style="color:#6c757d;">{{ user_stats.missed }}</span>
+                        <span class="l">Fallados completamente</span>
+                    </div>
+                </div>
+                <div class="streak-row">
+                    Racha actual: <strong>{{ user_stats.current_streak }}</strong>
+                    <span class="dot-sep">·</span>
+                    Mejor racha: <strong>{{ user_stats.best_streak }}</strong>
+                </div>
+            </div>
+            <div class="chart-wrap">
+                <canvas id="statsChart{{ stats_user.id }}"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="stats-subsection">
+        <h5>Precisión de pronósticos</h5>
+        {% include "_accuracy_row.html" with name="Acierto de equipo ganador" value=user_stats.winner_accuracy %}
+        {% include "_accuracy_row.html" with name="Acierto de empates" value=user_stats.draw_accuracy %}
+        {% include "_accuracy_row.html" with name="Marcador exacto" value=user_stats.exact_accuracy %}
+    </div>
+    {% else %}
+    <p class="empty-note">Aún no hay partidos finalizados para mostrar estadísticas de rendimiento.</p>
+    {% endif %}
+</div>
+
+{% if user_stats.has_finished %}
+<script>
+(function () {
+    var el = document.getElementById('statsChart{{ stats_user.id }}');
+    if (!el || typeof Chart === 'undefined') return;
+    new Chart(el, {
+        type: 'doughnut',
+        data: {
+            labels: ['Marcador exacto', 'Resultado correcto', 'Un gol', 'Fallados'],
+            datasets: [{
+                data: [
+                    {{ user_stats.exact_hits }},
+                    {{ user_stats.result_hits }},
+                    {{ user_stats.one_goal_hits }},
+                    {{ user_stats.missed }}
+                ],
+                backgroundColor: ['#e94560', '#16213e', '#0f3460', '#6c757d'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            cutout: '62%',
+            plugins: {
+                legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } }
+            },
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+})();
+</script>
+{% endif %}

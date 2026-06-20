@@ -215,6 +215,177 @@
             margin: 0 0 15px 0;
         }
 
+        /* === Tarjeta de perfil y estadísticas === */
+        .profile-card {
+            padding: 22px;
+            border: 1px solid var(--pico-muted-border-color);
+        }
+        .profile-top {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            flex-wrap: wrap;
+        }
+        .profile-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #e94560, #16213e);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            font-weight: 700;
+            flex-shrink: 0;
+            letter-spacing: 1px;
+        }
+        .profile-identity { flex: 1; min-width: 160px; }
+        .profile-identity h3 { margin: 0; font-size: 1.5rem; }
+        .profile-meta {
+            color: var(--pico-muted-color);
+            font-size: 0.85rem;
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .badge-own {
+            background: #3366cc;
+            color: #fff;
+            text-transform: none;
+            font-size: 0.7rem;
+        }
+        .rank-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            background: #16213e;
+            color: #fff;
+            white-space: nowrap;
+        }
+        .rank-badge.top3 { background: #e94560; }
+        .rank-badge small { font-weight: 500; opacity: 0.8; font-size: 0.75rem; }
+        .points-hero {
+            text-align: center;
+            margin: 20px 0 6px;
+            padding: 14px 0;
+            border-top: 1px solid var(--pico-muted-border-color);
+            border-bottom: 1px solid var(--pico-muted-border-color);
+        }
+        .points-hero .pts {
+            font-size: 2.6rem;
+            font-weight: 800;
+            color: var(--pico-primary);
+            line-height: 1;
+        }
+        .points-hero .lbl {
+            display: block;
+            font-size: 0.78rem;
+            color: var(--pico-muted-color);
+            margin-top: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .stat-tile {
+            background: var(--pico-card-background-color);
+            border: 1px solid var(--pico-muted-border-color);
+            border-radius: 8px;
+            padding: 14px 10px;
+            text-align: center;
+        }
+        .stat-tile .v {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--pico-color);
+            display: block;
+        }
+        .stat-tile .l {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--pico-muted-color);
+            margin-top: 4px;
+            line-height: 1.2;
+        }
+        .stats-subsection { margin-top: 22px; }
+        .stats-subsection h5 {
+            margin: 0 0 12px 0;
+            border-bottom: 1px solid var(--pico-muted-border-color);
+            padding-bottom: 7px;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--pico-muted-color);
+        }
+        .breakdown-grid {
+            display: grid;
+            grid-template-columns: 1.3fr 1fr;
+            gap: 18px;
+            align-items: center;
+        }
+        .streak-row {
+            margin-top: 14px;
+            font-size: 0.85rem;
+            color: var(--pico-muted-color);
+            text-align: center;
+        }
+        .streak-row strong { color: var(--pico-color); }
+        .dot-sep { margin: 0 6px; opacity: 0.5; }
+        .chart-wrap {
+            position: relative;
+            height: 230px;
+            min-width: 0;
+        }
+        .accuracy-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .accuracy-name {
+            font-size: 0.85rem;
+            min-width: 170px;
+            flex-shrink: 0;
+        }
+        .accuracy-bar {
+            flex: 1;
+            height: 10px;
+            background: var(--pico-muted-background-color);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .accuracy-fill {
+            display: block;
+            height: 100%;
+            background: linear-gradient(90deg, #e94560, #16213e);
+            border-radius: 5px;
+            transition: width 0.6s ease;
+        }
+        .accuracy-pct {
+            font-weight: 700;
+            min-width: 50px;
+            text-align: right;
+            font-size: 0.9rem;
+        }
+        .empty-note {
+            text-align: center;
+            color: var(--pico-muted-color);
+            padding: 18px 0;
+            margin: 0;
+            font-size: 0.9rem;
+        }
+        @media only screen and (max-width: 600px) {
+            .breakdown-grid { grid-template-columns: 1fr; }
+            .profile-top { justify-content: center; text-align: center; }
+            .profile-identity { flex-basis: 100%; }
+            .accuracy-name { min-width: 120px; }
+        }
+
         @media only screen and (prefers-color-scheme: dark) {
             table th {
                 background: var(--pico-muted-background-color);

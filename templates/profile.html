@@ -4,18 +4,13 @@
 
 {% block content %}
 <section>
-    <div class="profile-header">
-        <h3>{{ user.username }}</h3>
-        {% if position %}
-        <p style="color: #666; font-size: 0.9rem;">Posición #{{ position }} de {{ total_users }}</p>
-        {% endif %}
-    </div>
+    {% include "_profile_stats.html" with stats_user=user user_stats=user_stats position=position total_users=total_users is_own=False %}
 
-    <div style="display: flex; gap: 10px; justify-content: center;">
-        <a href="{% url 'user_predictions_by_username' user.username %}" class="button">Ver Pronósticos</a>
-        <form action="{% url 'logout' %}" method="post" style="display:inline;">
+    <div style="display: flex; gap: 10px; justify-content: center; margin-top: 15px;">
+        <a href="{% url 'user_predictions_by_username' user.username %}" role="button">Ver Pronósticos</a>
+        <form action="{% url 'logout' %}" method="post" style="display:flex;">
             {% csrf_token %}
-            <button type="submit" class="secondary">Cerrar Sesión</button>
+            <button type="submit" class="secondary" style="width:auto; margin:0;">Cerrar Sesión</button>
         </form>
     </div>
 

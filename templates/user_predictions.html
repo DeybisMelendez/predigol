@@ -5,15 +5,10 @@
 
 {% block content %}
 <section>
-    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
-        <h2 style="margin: 0;">Pronósticos de {{ profile_user.username }}</h2>
-        {% if is_own %}
-            <span class="badge" style="background: #3366cc; color: #fff;">Tu cuenta</span>
-        {% endif %}
-    </div>
+    {% include "_profile_stats.html" with stats_user=profile_user user_stats=user_stats position=position total_users=total_users is_own=is_own %}
 
     {% if predictions %}
-        <div style="overflow-x: auto;">
+        <div style="overflow-x: auto; margin-top: 20px;">
             <table>
                 <thead>
                     <tr>

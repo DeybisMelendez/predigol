@@ -9,6 +9,7 @@ from django.utils import timezone
 from datetime import timedelta, date
 from collections import defaultdict
 from .models import Match, Prediction, PlayerStats, Friendship, InvitationCode
+from .stats import compute_user_stats, get_ranking_position
 
 MATCH_START_BUFFER = timedelta(minutes=5)
 
@@ -101,10 +102,15 @@ def user_predictions(request, username=None):
         return redirect('user_predictions_by_username', username=request.user.username)
     else:
         return redirect('login')
+    user_stats = compute_user_stats(user)
+    position, total_users = get_ranking_position(user)
     context = {
         'profile_user': user,
         'predictions': predictions,
         'is_own': is_own,
+        'user_stats': user_stats,
+        'position': position,
+        'total_users': total_users,
     }
     return render(request, 'user_predictions.html', context)
 
@@ -116,18 +122,8 @@ def my_predictions(request):
 
 @login_required
 def profile(request):
-    all_users = (
-        User.objects
-        .filter(prediction__isnull=False)
-        .annotate(total_points=Sum('prediction__points'))
-        .order_by('-total_points')
-    )
-    total_users = all_users.count()
-    position = None
-    for i, user in enumerate(all_users, 1):
-        if user.id == request.user.id:
-            position = i
-            break
+    position, total_users = get_ranking_position(request.user)
+    user_stats = compute_user_stats(request.user)
 
     friends = Friendship.objects.filter(user=request.user).select_related('friend')
     friend_count = friends.count()
@@ -158,6 +154,7 @@ def profile(request):
     context = {
         'position': position,
         'total_users': total_users,
+        'user_stats': user_stats,
         'friends': friends,
         'friend_count': friend_count,
         'invite_url': invite_url,
