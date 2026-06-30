@@ -126,8 +126,21 @@ class FootballDataAPI:
         home_score = None
         away_score = None
         if "score" in match_data and match_data["score"].get("fullTime"):
-            home_score = match_data["score"]["fullTime"].get("home")
-            away_score = match_data["score"]["fullTime"].get("away")
+            score_duration = match_data["score"].get("duration")
+            if score_duration == "PENALTY_SHOOTOUT":
+                home_score = match_data["score"].get("regularTime", {}).get("home")
+                away_score = match_data["score"].get("regularTime", {}).get("away")
+            elif score_duration == "EXTRA_TIME":
+                regular = match_data["score"].get("regularTime", {})
+                if regular and regular.get("home") is not None:
+                    home_score = regular.get("home")
+                    away_score = regular.get("away")
+                else:
+                    home_score = match_data["score"]["fullTime"].get("home")
+                    away_score = match_data["score"]["fullTime"].get("away")
+            else:
+                home_score = match_data["score"]["fullTime"].get("home")
+                away_score = match_data["score"]["fullTime"].get("away")
 
         if home_score is None and away_score is None and match_data.get("status") == "FINISHED":
             logger.info("Score is None for FINISHED match %s, fetching fresh data", match_data.get("id"))
@@ -135,8 +148,21 @@ class FootballDataAPI:
                 fresh_data = self.get_match(match_data["id"])
                 if fresh_data:
                     fresh_score = fresh_data.get("score", {})
-                    home_score = fresh_score.get("fullTime", {}).get("home")
-                    away_score = fresh_score.get("fullTime", {}).get("away")
+                    score_duration = fresh_score.get("duration")
+                    if score_duration == "PENALTY_SHOOTOUT":
+                        home_score = fresh_score.get("regularTime", {}).get("home")
+                        away_score = fresh_score.get("regularTime", {}).get("away")
+                    elif score_duration == "EXTRA_TIME":
+                        regular = fresh_score.get("regularTime", {})
+                        if regular and regular.get("home") is not None:
+                            home_score = regular.get("home")
+                            away_score = regular.get("away")
+                        else:
+                            home_score = fresh_score.get("fullTime", {}).get("home")
+                            away_score = fresh_score.get("fullTime", {}).get("away")
+                    else:
+                        home_score = fresh_score.get("fullTime", {}).get("home")
+                        away_score = fresh_score.get("fullTime", {}).get("away")
                     logger.info("Fresh scores for match %s: %s-%s", match_data.get("id"), home_score, away_score)
             except Exception as e:
                 logger.error("Error fetching fresh score for match %s: %s", match_data.get("id"), e)
