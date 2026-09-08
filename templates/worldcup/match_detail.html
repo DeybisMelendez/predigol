@@ -1,7 +1,7 @@
-{% extends "base.html" %}
-{% load champions_teams %}
+{% extends "worldcup/base.html" %}
+{% load team_translations %}
 
-{% block title %}{{ match.home_team|team_name_spanish }} vs {{ match.away_team|team_name_spanish }} - Champions League{% endblock %}
+{% block title %}{{ match.home_team|team_name_spanish }} vs {{ match.away_team|team_name_spanish }} - Mundial 2026{% endblock %}
 
 {% block content %}
 <section>
@@ -54,21 +54,11 @@
 {% if user.is_authenticated %}
     {% if match.status == 'SCHEDULED' or match.status == 'TIMED' %}
 <section style="text-align: center; margin: 1.5rem 0;">
-    <button class="predict-btn secondary" data-match-id="{{ match.id }}" data-home="{{ match.home_team|team_name_spanish }}" data-away="{{ match.away_team|team_name_spanish }}" data-current-pick="{% if user_prediction %}{{ user_prediction.pick }}{% endif %}">
+    <button class="predict-btn secondary" data-match-id="{{ match.id }}" data-home="{{ match.home_team|team_name_spanish }}" data-away="{{ match.away_team|team_name_spanish }}">
         {{ user_prediction|yesno:"Actualizar Pronóstico,Hacer Pronóstico" }}
     </button>
 </section>
     {% endif %}
-{% endif %}
-
-{% if user_prediction and match.status != 'SCHEDULED' and match.status != 'TIMED' %}
-<section style="text-align: center; margin: 1rem 0;">
-    <span style="color: #666;">Tu pronóstico:</span>
-    <span class="pick-tag {% if user_prediction.is_double_chance %}dc{% endif %}" style="margin-left: 8px;">{{ user_prediction.pick_label }}</span>
-    {% if match.is_finished %}
-        <span class="points-tag-pill" style="margin-left: 8px;">{{ user_prediction.points }} pts</span>
-    {% endif %}
-</section>
 {% endif %}
 
 {% if match.goals or match.bookings or match.substitutions %}
@@ -154,7 +144,7 @@
                 {{ match.home_team|team_name_spanish }}
             </h4>
             {% if match.home_formation %}
-            <p style="color: #00a1d8; font-weight: 600; margin: 0 0 10px 0;">Formación: {{ match.home_formation }}</p>
+            <p style="color: var(--primary); font-weight: 600; margin: 0 0 10px 0;">Formación: {{ match.home_formation }}</p>
             {% endif %}
             {% if match.home_coach %}
             <p style="color: #666; font-size: 0.85rem; margin: 0 0 10px 0;">DT: {{ match.home_coach }}</p>
@@ -179,7 +169,7 @@
                 {{ match.away_team|team_name_spanish }}
             </h4>
             {% if match.away_formation %}
-            <p style="color: #00a1d8; font-weight: 600; margin: 0 0 10px 0;">Formación: {{ match.away_formation }}</p>
+            <p style="color: var(--primary); font-weight: 600; margin: 0 0 10px 0;">Formación: {{ match.away_formation }}</p>
             {% endif %}
             {% if match.away_coach %}
             <p style="color: #666; font-size: 0.85rem; margin: 0 0 10px 0;">DT: {{ match.away_coach }}</p>
@@ -205,7 +195,7 @@
 {% if match.home_bench or match.away_bench %}
 <section>
     <h3>Banca</h3>
-    <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px;">
+    <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px;">
         {% if match.home_bench %}
         <div class="card">
             <h4>{{ match.home_team|team_name_spanish }}</h4>
@@ -282,12 +272,12 @@
                 <tbody>
                     {% for p in predictions %}
                     <tr>
-                        <td><a href="{% url 'champions:user_predictions_by_username' p.user.username %}">{{ p.user.username }}</a></td>
+                        <td><a href="{% url 'worldcup:user_predictions_by_username' p.user.username %}">{{ p.user.username }}</a></td>
                         <td>
-                            {% if p.user == user or match.is_finished %}
-                                <span class="pick-tag {% if p.is_double_chance %}dc{% endif %}">{{ p.pick_label }}</span>
+                            {% if p.user == user or match.status == 'IN_PLAY' or match.status == 'PAUSED' or match.is_finished %}
+                                <span class="score-display">{{ p.home_goals }} - {{ p.away_goals }}</span>
                             {% else %}
-                                <span style="color: #999;">✓ Pronóstico agregado</span>
+                                <span class="prediction-added">✓ Pronóstico agregado</span>
                             {% endif %}
                         </td>
                         <td>
@@ -313,30 +303,21 @@
         <h3 id="dialog-title">Hacer Pronóstico</h3>
         <form id="predict-form">
             <input type="hidden" id="match-id" name="match_id">
-
-            <div class="pick-block">
-                <div class="pick-group-title">Resultado (3 pts)</div>
-                <div class="pick-group" data-group="1X2">
-                    <label class="pick-option" data-value="HOME"><input type="radio" name="pick" value="HOME" required><span>1</span></label>
-                    <label class="pick-option" data-value="DRAW"><input type="radio" name="pick" value="DRAW"><span>X</span></label>
-                    <label class="pick-option" data-value="AWAY"><input type="radio" name="pick" value="AWAY"><span>2</span></label>
-                </div>
+            <div class="grid">
+                <label for="home-goals">
+                    <span id="home-team-label">Local</span>
+                    <input type="number" id="home-goals" name="home_goals" min="0" max="20" required>
+                </label>
+                <label for="away-goals">
+                    <span id="away-team-label">Visitante</span>
+                    <input type="number" id="away-goals" name="away_goals" min="0" max="20" required>
+                </label>
             </div>
-
-            <div class="pick-block">
-                <div class="pick-group-title">Doble oportunidad (1 pt)</div>
-                <div class="pick-group" data-group="DOUBLE_CHANCE">
-                    <label class="pick-option" data-value="HOME_OR_DRAW"><input type="radio" name="pick" value="HOME_OR_DRAW"><span>1X</span></label>
-                    <label class="pick-option" data-value="DRAW_OR_AWAY"><input type="radio" name="pick" value="DRAW_OR_AWAY"><span>X2</span></label>
-                    <label class="pick-option" data-value="HOME_OR_AWAY"><input type="radio" name="pick" value="HOME_OR_AWAY"><span>12</span></label>
-                </div>
-            </div>
-
             <button type="submit">Guardar Pronóstico</button>
             <button type="button" class="secondary" onclick="document.getElementById('predict-dialog').removeAttribute('open')">Cancelar</button>
         </form>
         <p style="font-size:0.85rem;color:#666;margin-top:1rem;">
-            Elige <strong>una sola</strong> opción. Acierto en resultado: <strong>3 pts</strong>. Acierto en doble oportunidad: <strong>1 pt</strong>.
+            <strong>Puntos:</strong> Marcador exacto: 3 pts | Resultado: 2 pts | Cantidad de goles de un equipo: 1 pt
         </p>
     </article>
 </dialog>
@@ -350,38 +331,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const dialog = document.getElementById('predict-dialog');
     if (!dialog) return;
 
-    function refreshChecked() {
-        document.querySelectorAll('#predict-dialog .pick-option').forEach(function(opt) {
-            var input = opt.querySelector('input');
-            opt.classList.toggle('checked', !!(input && input.checked));
-        });
-    }
-
-    document.querySelectorAll('#predict-dialog .pick-option').forEach(function(opt) {
-        opt.addEventListener('click', function(e) {
-            e.preventDefault();
-            var input = this.querySelector('input');
-            if (input) {
-                input.checked = true;
-                refreshChecked();
-            }
-        });
-    });
-
     document.querySelectorAll('.predict-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {
             const matchId = this.dataset.matchId;
             const home = this.dataset.home;
             const away = this.dataset.away;
-            const currentPick = this.dataset.currentPick || '';
 
             document.getElementById('match-id').value = matchId;
+            document.getElementById('home-team-label').textContent = home;
+            document.getElementById('away-team-label').textContent = away;
             document.getElementById('dialog-title').textContent = home + ' vs ' + away;
-
-            document.querySelectorAll('#predict-dialog input[name="pick"]').forEach(function(r) {
-                r.checked = (r.value === currentPick);
-            });
-            refreshChecked();
+            document.getElementById('home-goals').value = '';
+            document.getElementById('away-goals').value = '';
 
             dialog.setAttribute('open', '');
         });
@@ -390,22 +351,19 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('predict-form').addEventListener('submit', function(e) {
         e.preventDefault();
         const matchId = document.getElementById('match-id').value;
-        const pickEl = document.querySelector('#predict-dialog input[name="pick"]:checked');
-        if (!pickEl) {
-            alert('Selecciona una opción.');
-            return;
-        }
-        const pick = pickEl.value;
+        const homeGoals = document.getElementById('home-goals').value;
+        const awayGoals = document.getElementById('away-goals').value;
 
-        fetch('{% url "champions:api_predict" %}', {
+            fetch('{% url "worldcup:api_predict" %}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': window.csrfToken
             },
             body: JSON.stringify({
-                match_id: parseInt(matchId),
-                pick: pick
+                match_id: matchId,
+                home_goals: parseInt(homeGoals),
+                away_goals: parseInt(awayGoals)
             })
         })
         .then(function(response) { return response.json(); })

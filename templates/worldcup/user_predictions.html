@@ -1,7 +1,7 @@
-{% extends "base.html" %}
-{% load champions_teams %}
+{% extends "worldcup/base.html" %}
+{% load team_translations %}
 
-{% block title %}Pronósticos de {{ profile_user.username }} - Champions League{% endblock %}
+{% block title %}Pronósticos de {{ profile_user.username }} - Mundial 2026{% endblock %}
 
 {% block content %}
 <section>
@@ -23,7 +23,7 @@
                     {% for p in predictions %}
                     <tr>
                         <td>
-                            <a href="{% url 'champions:match_detail' p.match.id %}" style="text-decoration: none; color: inherit;">
+                            <a href="{% url 'worldcup:match_detail' p.match.id %}" style="text-decoration: none; color: inherit;">
                                 <img src="{{ p.match.home_team_crest }}" class="team-crest" alt="{{ p.match.home_team|team_name_spanish }}" onerror="this.style.display='none'">
                                 {{ p.match.home_team|team_name_spanish }}
                                 <span class="match-vs">vs</span>
@@ -34,15 +34,15 @@
                             <small>
                                 <span class="badge badge-stage" style="font-size: 0.65rem; padding: 2px 6px;">{{ p.match.get_stage_display }}</span>
                                 {% if p.match.group %}
-                                    <span class="badge badge-stage" style="background:#00a1d8; font-size: 0.65rem; padding: 2px 6px;">{{ p.match.group }}</span>
+                                    <span class="badge badge-group" style="font-size: 0.65rem; padding: 2px 6px;">{{ p.match.group }}</span>
                                 {% endif %}
                             </small>
                         </td>
                         <td>
                             {% if is_own or p.match.status == 'IN_PLAY' or p.match.status == 'PAUSED' or p.match.is_finished %}
-                                <span class="pick-tag {% if p.is_double_chance %}dc{% endif %}">{{ p.pick_label }}</span>
+                                <span class="score-display">{{ p.home_goals }} - {{ p.away_goals }}</span>
                             {% else %}
-                                <span style="color: #999;">✓ Pronóstico agregado</span>
+                                <span class="prediction-added">✓ Pronóstico agregado</span>
                             {% endif %}
                         </td>
                         <td>

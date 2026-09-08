@@ -1,13 +1,13 @@
-{% extends "base.html" %}
+{% extends "worldcup/base.html" %}
 
-{% block title %}Mi Perfil - Champions League{% endblock %}
+{% block title %}Mi Perfil - Mundial 2026{% endblock %}
 
 {% block content %}
 <section>
     {% include "_profile_stats.html" with stats_user=user user_stats=user_stats position=position total_users=total_users is_own=False %}
 
     <div style="display: flex; gap: 10px; justify-content: center; margin-top: 15px;">
-        <a href="{% url 'champions:user_predictions_by_username' user.username %}" role="button">Ver Pronósticos</a>
+        <a href="{% url 'worldcup:user_predictions_by_username' user.username %}" role="button">Ver Pronósticos</a>
         <form action="{% url 'logout' %}" method="post" style="display:flex;">
             {% csrf_token %}
             <button type="submit" class="secondary" style="width:auto; margin:0;">Cerrar Sesión</button>
@@ -24,7 +24,7 @@
 
     <div class="card" style="margin-top: 25px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-            <h4 style="margin: 0;">Mis Amigos ({{ friend_count }})</h4>
+            <h4 style="margin: 0;">👥 Mis Amigos ({{ friend_count }})</h4>
             <button onclick="generateInvite()" id="generateBtn" class="secondary" style="margin: 0;">
                 {% if invite_url %}Nuevo Enlace{% else %}Generar Enlace{% endif %}
             </button>
@@ -44,7 +44,7 @@
                         <tr>
                             <th>#</th>
                             <th>Amigo</th>
-                            <th>Puntos Champions</th>
+                            <th>Puntos</th>
                             <th>Desde</th>
                             <th></th>
                         </tr>
@@ -53,11 +53,11 @@
                         {% for f in friends_data %}
                         <tr>
                             <td>{{ f.rank }}</td>
-                            <td><a href="{% url 'champions:user_predictions_by_username' f.username %}">{{ f.username }}</a></td>
+                            <td><a href="{% url 'worldcup:user_predictions_by_username' f.username %}">{{ f.username }}</a></td>
                             <td><strong>{{ f.total_points }}</strong></td>
                             <td style="color: var(--pico-muted-color);">{% if f.created_at %}{{ f.created_at|date:"d M Y" }}{% endif %}</td>
                             <td>
-                                <form action="{% url 'champions:remove_friend' f.username %}" method="POST" style="display:inline;">
+                                <form action="{% url 'worldcup:remove_friend' f.username %}" method="POST" style="display:inline;">
                                     {% csrf_token %}
                                     <button type="submit" class="secondary" style="padding: 4px 10px; font-size: 0.75rem;" onclick="return confirm('¿Eliminar a {{ f.username }} de tus amigos?')">Eliminar</button>
                                 </form>
@@ -98,7 +98,7 @@ function generateInvite() {
     btn.disabled = true;
     btn.textContent = 'Generando...';
 
-    fetch('{% url "champions:generate_invite" %}', {
+    fetch('{% url "worldcup:generate_invite" %}', {
         method: 'POST',
         headers: {
             'X-CSRFToken': getCookie('csrftoken'),

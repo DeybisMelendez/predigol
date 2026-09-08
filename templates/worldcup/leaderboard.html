@@ -1,10 +1,10 @@
-{% extends "base.html" %}
+{% extends "worldcup/base.html" %}
 
-{% block title %}Clasificación - Champions League{% endblock %}
+{% block title %}Clasificación - Mundial 2026{% endblock %}
 
 {% block content %}
 <section>
-    <h2>Clasificación - Champions League</h2>
+    <h2>Clasificación</h2>
 
     {% if leaderboard %}
         <div style="overflow-x: auto;">
@@ -20,7 +20,7 @@
                     {% for entry in leaderboard %}
                     <tr {% if request.user.is_authenticated and entry.id == request.user.id %}class="highlight"{% endif %}>
                         <td>{{ forloop.counter }}</td>
-                        <td><a href="{% url 'champions:user_predictions_by_username' entry.username %}">{{ entry.username }}</a></td>
+                        <td><a href="{% url 'worldcup:user_predictions_by_username' entry.username %}">{{ entry.username }}</a></td>
                         <td><strong>{{ entry.total_points|default:0 }}</strong></td>
                     </tr>
                     {% endfor %}

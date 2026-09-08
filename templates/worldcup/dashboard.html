@@ -1,11 +1,11 @@
-{% extends "base.html" %}
-{% load champions_teams %}
+{% extends "worldcup/base.html" %}
+{% load team_translations %}
 
-{% block title %}Partidos - Champions League{% endblock %}
+{% block title %}Partidos - Mundial 2026{% endblock %}
 
 {% block content %}
 <nav class="tabs" style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 2px solid #eee;">
-    <button class="tab active" data-tab="upcoming" style="padding: 0.75rem 1.5rem; border: none; background: none; cursor: pointer; font-size: 1rem; font-weight: 600; color: #00a1d8; border-bottom: 3px solid #00a1d8; margin-bottom: -2px;">
+    <button class="tab active" data-tab="upcoming" style="padding: 0.75rem 1.5rem; border: none; background: none; cursor: pointer; font-size: 1rem; font-weight: 600; color: var(--primary); border-bottom: 3px solid var(--primary); margin-bottom: -2px;">
         Próximos Partidos
     </button>
     <button class="tab" data-tab="history" style="padding: 0.75rem 1.5rem; border: none; background: none; cursor: pointer; font-size: 1rem; font-weight: 600; color: #666; border-bottom: 3px solid transparent; margin-bottom: -2px;">
@@ -17,8 +17,8 @@
     {% if upcoming_matches_by_date %}
         {% for day in upcoming_matches_by_date %}
         <div class="date-group" style="margin-bottom: 1.5rem;">
-            <h3 style="color: #00a1d8; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
-                {{ day.label }}
+            <h3 style="color: var(--primary); border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
+                📅 {{ day.label }}
             </h3>
             <div style="overflow-x: auto;">
                 <table>
@@ -38,7 +38,7 @@
                                 <small style="color: #666;">{{ match.datetime|date:"H:i" }}</small>
                             </td>
                             <td>
-                                <a href="{% url 'champions:match_detail' match.id %}" style="text-decoration: none; color: inherit;">
+                                <a href="{% url 'worldcup:match_detail' match.id %}" style="text-decoration: none; color: inherit;">
                                     <img src="{{ match.home_team_crest }}" class="team-crest" alt="{{ match.home_team|team_name_spanish }}" onerror="this.style.display='none'">
                                     {{ match.home_team|team_name_spanish }}
                                     <span class="match-vs">vs</span>
@@ -49,19 +49,19 @@
                             <td>
                                 <span class="badge badge-stage">{{ match.get_stage_display }}</span>
                                 {% if match.group %}
-                                    <span class="badge badge-stage" style="background:#00a1d8;">Grupo {{ match.group }}</span>
+                                    <span class="badge badge-group">Grupo {{ match.group }}</span>
                                 {% endif %}
                             </td>
                             <td>
                                 {% if match.user_prediction %}
-                                    <span class="pick-tag {% if match.user_prediction.is_double_chance %}dc{% endif %}">{{ match.user_prediction.pick_label }}</span>
+                                    <span class="score-display">{{ match.user_prediction.home_goals }} - {{ match.user_prediction.away_goals }}</span>
                                 {% else %}
                                     <span style="color: #999;">-</span>
                                 {% endif %}
                             </td>
                             <td>
                                 {% if match.status == 'SCHEDULED' or match.status == 'TIMED' %}
-                                    <button class="predict-btn secondary" data-match-id="{{ match.id }}" data-home="{{ match.home_team|team_name_spanish }}" data-away="{{ match.away_team|team_name_spanish }}" data-current-pick="{% if match.user_prediction %}{{ match.user_prediction.pick }}{% endif %}">
+                                    <button class="predict-btn secondary" data-match-id="{{ match.id }}" data-home="{{ match.home_team|team_name_spanish }}" data-away="{{ match.away_team|team_name_spanish }}">
                                         {{ match.user_prediction|yesno:"Actualizar,Pronosticar" }}
                                     </button>
                                 {% else %}
@@ -78,7 +78,7 @@
         </div>
         {% endfor %}
     {% else %}
-        <p>No hay partidos programados. Ejecuta <code>python manage.py sync_champions_matches</code> para sincronizar.</p>
+        <p>No hay partidos programados.</p>
     {% endif %}
 </div>
 
@@ -102,7 +102,7 @@
                             <small style="color: #666;">{{ match.datetime|date:"H:i" }}</small>
                         </td>
                         <td>
-                            <a href="{% url 'champions:match_detail' match.id %}" style="text-decoration: none; color: inherit;">
+                            <a href="{% url 'worldcup:match_detail' match.id %}" style="text-decoration: none; color: inherit;">
                                 <img src="{{ match.home_team_crest }}" class="team-crest" alt="{{ match.home_team|team_name_spanish }}" onerror="this.style.display='none'">
                                 {{ match.home_team|team_name_spanish }}
                                 <span class="match-vs">vs</span>
@@ -144,30 +144,21 @@
         <h3 id="dialog-title">Hacer Pronóstico</h3>
         <form id="predict-form">
             <input type="hidden" id="match-id" name="match_id">
-
-            <div class="pick-block">
-                <div class="pick-group-title">Resultado (3 pts)</div>
-                <div class="pick-group" data-group="1X2">
-                    <label class="pick-option" data-value="HOME"><input type="radio" name="pick" value="HOME" required><span>1</span></label>
-                    <label class="pick-option" data-value="DRAW"><input type="radio" name="pick" value="DRAW"><span>X</span></label>
-                    <label class="pick-option" data-value="AWAY"><input type="radio" name="pick" value="AWAY"><span>2</span></label>
-                </div>
+            <div class="grid">
+                <label for="home-goals">
+                    <span id="home-team-label">Local</span>
+                    <input type="number" id="home-goals" name="home_goals" min="0" max="20" required>
+                </label>
+                <label for="away-goals">
+                    <span id="away-team-label">Visitante</span>
+                    <input type="number" id="away-goals" name="away_goals" min="0" max="20" required>
+                </label>
             </div>
-
-            <div class="pick-block">
-                <div class="pick-group-title">Doble oportunidad (1 pt)</div>
-                <div class="pick-group" data-group="DOUBLE_CHANCE">
-                    <label class="pick-option" data-value="HOME_OR_DRAW"><input type="radio" name="pick" value="HOME_OR_DRAW"><span>1X</span></label>
-                    <label class="pick-option" data-value="DRAW_OR_AWAY"><input type="radio" name="pick" value="DRAW_OR_AWAY"><span>X2</span></label>
-                    <label class="pick-option" data-value="HOME_OR_AWAY"><input type="radio" name="pick" value="HOME_OR_AWAY"><span>12</span></label>
-                </div>
-            </div>
-
             <button type="submit">Guardar Pronóstico</button>
             <button type="button" class="secondary" onclick="document.getElementById('predict-dialog').removeAttribute('open')">Cancelar</button>
         </form>
         <p style="font-size:0.85rem;color:#666;margin-top:1rem;">
-            Elige <strong>una sola</strong> opción. Acierto en resultado: <strong>3 pts</strong>. Acierto en doble oportunidad: <strong>1 pt</strong>.
+            <strong>Puntos:</strong> Marcador exacto: 3 pts | Resultado: 2 pts | Cantidad de goles de un equipo: 1 pt
         </p>
     </article>
 </dialog>
@@ -184,8 +175,8 @@ document.addEventListener('DOMContentLoaded', function() {
         tabs.forEach(function(t) {
             if (t.dataset.tab === tabName) {
                 t.classList.add('active');
-                t.style.color = '#00a1d8';
-                t.style.borderBottomColor = '#00a1d8';
+                t.style.color = 'var(--primary)';
+                t.style.borderBottomColor = 'var(--primary)';
             } else {
                 t.classList.remove('active');
                 t.style.color = '#666';
@@ -217,38 +208,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const dialog = document.getElementById('predict-dialog');
     if (!dialog) return;
 
-    function refreshChecked() {
-        document.querySelectorAll('#predict-dialog .pick-option').forEach(function(opt) {
-            var input = opt.querySelector('input');
-            opt.classList.toggle('checked', !!(input && input.checked));
-        });
-    }
-
-    document.querySelectorAll('#predict-dialog .pick-option').forEach(function(opt) {
-        opt.addEventListener('click', function(e) {
-            e.preventDefault();
-            var input = this.querySelector('input');
-            if (input) {
-                input.checked = true;
-                refreshChecked();
-            }
-        });
-    });
-
     document.querySelectorAll('.predict-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {
             const matchId = this.dataset.matchId;
             const home = this.dataset.home;
             const away = this.dataset.away;
-            const currentPick = this.dataset.currentPick || '';
 
             document.getElementById('match-id').value = matchId;
+            document.getElementById('home-team-label').textContent = home;
+            document.getElementById('away-team-label').textContent = away;
             document.getElementById('dialog-title').textContent = home + ' vs ' + away;
-
-            document.querySelectorAll('#predict-dialog input[name="pick"]').forEach(function(r) {
-                r.checked = (r.value === currentPick);
-            });
-            refreshChecked();
+            document.getElementById('home-goals').value = '';
+            document.getElementById('away-goals').value = '';
 
             dialog.setAttribute('open', '');
         });
@@ -257,22 +228,19 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('predict-form').addEventListener('submit', function(e) {
         e.preventDefault();
         const matchId = document.getElementById('match-id').value;
-        const pickEl = document.querySelector('#predict-dialog input[name="pick"]:checked');
-        if (!pickEl) {
-            alert('Selecciona una opción.');
-            return;
-        }
-        const pick = pickEl.value;
+        const homeGoals = document.getElementById('home-goals').value;
+        const awayGoals = document.getElementById('away-goals').value;
 
-        fetch('{% url "champions:api_predict" %}', {
+            fetch('{% url "worldcup:api_predict" %}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': window.csrfToken
             },
             body: JSON.stringify({
-                match_id: parseInt(matchId),
-                pick: pick
+                match_id: matchId,
+                home_goals: parseInt(homeGoals),
+                away_goals: parseInt(awayGoals)
             })
         })
         .then(function(response) { return response.json(); })

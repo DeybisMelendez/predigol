@@ -1,15 +1,19 @@
-# Mundial - Juego de Pronósticos Copa del Mundo
+# Predigol - Juego de Pronósticos Multi-Temporada
 
-> Mini juego web para adivinar los resultados de los partidos de la Copa del Mundo y competir por el primer lugar en el ranking.
+> Mini juego web para adivinar los resultados de los partidos de fútbol y competir por el primer lugar en el ranking. Soporta múltiples temporadas (Mundial 2026, UEFA Champions League) coexistiendo.
 
 ## Características
 
-- **Pronósticos en tiempo real**: Predice los resultados de los partidos antes de que inicien
-- **Sistema de puntos dinámico**: Gana puntos según la precisión de tus pronósticos
-- **Tabla de clasificación**: Compite con otros usuarios en el leaderboard general
-- **Estadísticas detalladas**: Ricketts, exactos, precisión y más
-- **Sincronización automática**: Los partidos se actualizan desde la API de football-data.org
-- **Diseño responsive**: Interfaz limpia y moderna construida con Pico CSS
+- **Dos temporadas activas**: Mundial 2026 (lectura) y UEFA Champions League (activa).
+- **Pronósticos en tiempo real**: Predice antes de que inicien los partidos.
+- **Sistema de puntos dinámico**:
+  - Champions: 1X2 (3 pts) y doble oportunidad (1 pt).
+  - Worldcup: marcador exacto (3), resultado (2), goles de un equipo (1).
+- **Tabla de clasificación**: ranking independiente por temporada.
+- **Estadísticas detalladas**: precisión, rachas, promedios.
+- **Amigos e invitaciones**: compartidos entre temporadas (un solo grupo de amigos).
+- **Sincronización automática** desde la API de football-data.org.
+- **Diseño responsive** con Pico CSS.
 
 ## Requisitos
 
@@ -22,7 +26,7 @@
 1. **Clonar el repositorio**
 ```bash
 git clone <repo-url>
-cd mundial
+cd predigol
 ```
 
 2. **Crear y activar entorno virtual**
@@ -61,10 +65,10 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
-8. **Sincronizar partidos y calcular puntos**
+8. **Sincronizar partidos y calcular puntos de Champions League**
 ```bash
-python manage.py sync_matches
-python manage.py calculate_points
+python manage.py sync_champions_matches
+python manage.py calculate_champions_points
 ```
 
 ## Comandos de Gestión
@@ -72,64 +76,105 @@ python manage.py calculate_points
 | Comando | Descripción |
 |---------|-------------|
 | `python manage.py runserver` | Iniciar servidor de desarrollo |
-| `python manage.py sync_matches` | Sincronizar partidos desde la API |
-| `python manage.py calculate_points` | Calcular puntos de partidos finalizados |
+| `python manage.py sync_champions_matches` | Sincronizar partidos UCL desde la API |
+| `python manage.py calculate_champions_points` | Calcular puntos de partidos UCL finalizados |
 | `python manage.py shell` | Abrir shell de Django |
 | `python manage.py createsuperuser` | Crear administrador |
 
 ## Sistema de Puntos
 
-| Resultado | Puntos | Descripción |
-|-----------|--------|-------------|
-| Marcador exacto | 3 pts | Acertar el resultado exacto (ej: 2-1) |
-| Resultado | 2 pts | Acertar quién gana o si hay empate, pero no el marcador |
-| Cantidad de goles de un equipo | 1 pt | Acertar la cantidad de goles de solo un equipo |
+### Champions League (temporada activa)
+| Resultado | Puntos |
+|-----------|--------|
+| Resultado (1, X o 2) correcto | **3 pts** |
+| Doble oportunidad (1X, X2 o 12) correcta | **1 pt** |
+| Ninguna opción cubre el resultado | 0 pts |
+
+Una sola elección por partido, tomada de un grupo de 6 opciones (1, X, 2, 1X, X2, 12).
+
+### Mundial 2026 (solo lectura)
+| Resultado | Puntos |
+|-----------|--------|
+| Marcador exacto | 3 pts |
+| Resultado correcto | 2 pts |
+| Cantidad de goles de un equipo | 1 pt |
 
 ## Arquitectura
 
 ```
-mundial/
+predigol/
 ├── core/                    # Configuración del proyecto Django
 │   ├── settings.py
-│   └── urls.py
-├── worldcup/                # Aplicación principal
-│   ├── models.py           # Match, Prediction, PlayerStats
-│   ├── views.py            # Vistas y endpoints API
-│   ├── services.py         # Cliente de API externa
+│   └── urls.py              # incluye namespaces worldcup y champions
+├── worldcup/                # Mundial 2026 (read-only)
+│   ├── models.py            # Match, Prediction, PlayerStats, Friendship, InvitationCode
+│   ├── views.py
+│   ├── services.py
 │   └── management/commands/
-│       ├── sync_matches.py
-│       └── calculate_points.py
-├── templates/              # Plantillas HTML
-│   ├── base.html
+├── champions/               # UEFA Champions League (active)
+│   ├── models.py            # Match, Prediction (1X2+DC), PlayerStats
+│   ├── views.py
+│   ├── urls.py
+│   ├── services.py
+│   ├── stats.py
+│   ├── templatetags/
+│   └── management/commands/
+│       ├── sync_champions_matches.py
+│       └── calculate_champions_points.py
+├── templates/               # Plantillas HTML
+│   ├── base.html            # champions base (root, active season)
 │   ├── dashboard.html
-│   ├── leaderboard.html
 │   ├── match_detail.html
+│   ├── leaderboard.html
 │   ├── profile.html
-│   └── user_predictions.html
+│   ├── user_predictions.html
+│   ├── registration/        # signup/login compartidos
+│   └── worldcup/            # plantillas Worldcup
+│       ├── base.html
+│       ├── dashboard.html
+│       ├── match_detail.html
+│       ├── leaderboard.html
+│       ├── profile.html
+│       ├── user_predictions.html
+│       └── ...
 ├── db.sqlite3              # Base de datos
 ├── manage.py
+├── run_hourly_tasks.py     # Cron job para Champions
 └── .secret                 # Variables de entorno (no commitear)
 ```
+
+## Rutas
+
+### UEFA Champions League (raíz, temporada activa)
+| Ruta | Descripción |
+|------|-------------|
+| `/` | Dashboard con partidos próximos y completados |
+| `/match/<id>/` | Detalle de un partido con pronósticos |
+| `/predictions/<username>/` | Pronósticos de un usuario |
+| `/leaderboard/` | Tabla de clasificación |
+| `/profile/` | Mi perfil y estadísticas |
+| `/api/predict/` | Crear/actualizar pronóstico |
+| `/friends/...` | Gestión de amigos e invitaciones |
+| `/admin/` | Panel de administración |
+| `/accounts/login/` | Iniciar sesión |
+| `/accounts/signup/` | Registrarse |
+
+### Mundial 2026 (`/worldcup/`, lectura)
+| Ruta | Descripción |
+|------|-------------|
+| `/worldcup/` | Dashboard con partidos del Mundial |
+| `/worldcup/match/<id>/` | Detalle de un partido del Mundial |
+| `/worldcup/leaderboard/` | Clasificación Mundial |
+| `/worldcup/profile/` | Perfil con stats Mundial |
+| `/worldcup/api/predict/` | Crear/actualizar pronóstico Mundial |
+| `/worldcup/friends/...` | Amigos e invitaciones (mismas tablas globales) |
 
 ## API Externa
 
 Este proyecto utiliza la API de [football-data.org](https://api.football-data.org/v4).
 
-- Competencia: Copa del Mundo (código: `WC`)
-- Endpoints principales:
-  - Lista de partidos: `GET /v4/competitions/WC/matches`
-  - Detalle de partido: `GET /v4/matches/{id}`
-
-## Vistas Principales
-
-| Ruta | Descripción |
-|------|-------------|
-| `/` | Dashboard con partidos próximos y completados |
-| `/leaderboard/` | Tabla de clasificación general |
-| `/matches/<id>/` | Detalle de un partido con pronósticos |
-| `/predictions/` | Mis pronósticos |
-| `/profile/` | Mi perfil y estadísticas |
-| `/admin/` | Panel de administración Django |
+- **Mundial 2026**: código `WC` (legacy, no se sincroniza más)
+- **Champions League**: código `CL` (temporada activa)
 
 ## Tecnologías
 

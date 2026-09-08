@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 """
 Script standalone para ejecutar desde PythonAnywhere (scheduler hourly).
-Sincroniza partidos de la API y calcula puntos de predicciones.
+Sincroniza partidos de Champions League desde la API y calcula puntos.
+
+La temporada Worldcup 2026 quedo en modo lectura y ya no se sincroniza.
 
 Uso desde PythonAnywhere:
-    python /path/to/mundial/run_hourly_tasks.py
+    python /path/to/predigol/run_hourly_tasks.py
 """
 import os
 import sys
@@ -26,13 +28,13 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
 import django
 django.setup()
 
-from worldcup.services import FootballDataAPI
-from worldcup.models import Prediction, PlayerStats
+from champions.services import FootballDataAPI
+from champions.models import Prediction, PlayerStats
 
 
 def sync_matches():
     logger.info("=" * 50)
-    logger.info("Iniciando sincronizacion de partidos...")
+    logger.info("Iniciando sincronizacion de partidos de Champions League...")
     logger.info("Obteniendo partidos desde la API de football-data...")
     try:
         api = FootballDataAPI()
@@ -49,15 +51,15 @@ def sync_matches():
         total_synced = created + updated
         logger.info("Total de partidos sincronizados: %d", total_synced)
 
-        from worldcup.models import Match
+        from champions.models import Match
         total_matches = Match.objects.count()
-        logger.info("Total de partidos en base de datos: %d", total_matches)
+        logger.info("Total de partidos UCL en base de datos: %d", total_matches)
 
         finished = Match.objects.filter(status='FINISHED').count()
         scheduled = Match.objects.filter(status__in=['SCHEDULED', 'TIMED']).count()
         in_play = Match.objects.filter(status__in=['IN_PLAY', 'PAUSED']).count()
 
-        logger.info("Estado de partidos:")
+        logger.info("Estado de partidos UCL:")
         logger.info("  - Terminados (FINISHED): %d", finished)
         logger.info("  - Programados (SCHEDULED/TIMED): %d", scheduled)
         logger.info("  - En juego (IN_PLAY/PAUSED): %d", in_play)
@@ -72,19 +74,19 @@ def sync_matches():
 
 def calculate_points():
     logger.info("=" * 50)
-    logger.info("Calculando puntos de predicciones...")
+    logger.info("Calculando puntos de predicciones de Champions League...")
 
-    from worldcup.models import Match, Prediction
+    from champions.models import Match, Prediction
 
     finished_matches = Match.objects.filter(status='FINISHED')
     total_finished = finished_matches.count()
 
-    logger.info("Partidos terminados encontrados: %d", total_finished)
+    logger.info("Partidos UCL terminados encontrados: %d", total_finished)
 
     if total_finished == 0:
-        logger.info("No hay partidos terminados, no se calculan puntos")
+        logger.info("No hay partidos UCL terminados, no se calculan puntos")
         update_player_stats()
-        logger.info("PlayerStats actualizados")
+        logger.info("PlayerStats UCL actualizados")
         return
 
     updated_count = 0
@@ -116,18 +118,18 @@ def calculate_points():
         logger.info("Detalle de predicciones actualizadas:")
         for detail in updated_predictions_details[:10]:
             logger.info("  Usuario %s | Partido %s | %d -> %d puntos",
-                       detail['user'], detail['match'], detail['old'], detail['new'])
+                        detail['user'], detail['match'], detail['old'], detail['new'])
         if len(updated_predictions_details) > 10:
             logger.info("  ... y %d mas", len(updated_predictions_details) - 10)
 
     update_player_stats()
-    logger.info("PlayerStats actualizados")
+    logger.info("PlayerStats UCL actualizados")
 
 
 def update_player_stats():
     users_with_predictions = Prediction.objects.values('user').distinct()
     total_users = len(users_with_predictions)
-    logger.info("Actualizando PlayerStats para %d usuarios...", total_users)
+    logger.info("Actualizando PlayerStats UCL para %d usuarios...", total_users)
 
     stats_created = 0
     stats_updated = 0
@@ -150,19 +152,16 @@ def update_player_stats():
         logger.debug("Usuario %d: total_points=%d", user_id, total_points)
 
     logger.info("-" * 50)
-    logger.info("RESULTADO DE PLAYERSTATS:")
+    logger.info("RESULTADO DE PLAYERSTATS UCL:")
     logger.info("  - Stats creados: %d", stats_created)
     logger.info("  - Stats actualizados: %d", stats_updated)
     logger.info("-" * 50)
 
 
-
-
-
 def main():
     start_time = datetime.now()
     logger.info("=" * 50)
-    logger.info("INICIO - run_hourly_tasks")
+    logger.info("INICIO - run_hourly_tasks (Champions League)")
     logger.info("=" * 50)
 
     sync_ok = sync_matches()

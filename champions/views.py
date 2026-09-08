@@ -2,14 +2,18 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login
-from django.http import JsonResponse
-from django.db.models import Sum
 from django.contrib import messages
 from django.utils import timezone
-from datetime import timedelta, date
+from django.db.models import Sum
+from django.http import JsonResponse
+from datetime import timedelta
 from collections import defaultdict
-from .models import Match, Prediction, PlayerStats, Friendship, InvitationCode
+import secrets
+
+from .models import Match, Prediction, PlayerStats
 from .stats import compute_user_stats, get_ranking_position
+from worldcup.models import Friendship, InvitationCode
+
 
 MATCH_START_BUFFER = timedelta(minutes=5)
 
@@ -28,6 +32,20 @@ MONTH_NAMES_ES = {
     5: "May", 6: "Jun", 7: "Jul", 8: "Ago",
     9: "Sep", 10: "Oct", 11: "Nov", 12: "Dic",
 }
+
+
+PICK_CHOICES_UI = [
+    ('1X2', [
+        ('HOME', '1'),
+        ('DRAW', 'X'),
+        ('AWAY', '2'),
+    ]),
+    ('DOUBLE_CHANCE', [
+        ('HOME_OR_DRAW', '1X'),
+        ('DRAW_OR_AWAY', 'X2'),
+        ('HOME_OR_AWAY', '12'),
+    ]),
+]
 
 
 def get_date_label(match_date, today):
@@ -75,8 +93,9 @@ def dashboard(request):
     context = {
         'upcoming_matches_by_date': upcoming_matches_by_date,
         'finished_matches': finished_matches,
+        'pick_choices': PICK_CHOICES_UI,
     }
-    return render(request, 'worldcup/dashboard.html', context)
+    return render(request, 'dashboard.html', context)
 
 
 def match_detail(request, match_id):
@@ -89,8 +108,9 @@ def match_detail(request, match_id):
         'match': match,
         'predictions': predictions,
         'user_prediction': user_prediction,
+        'pick_choices': PICK_CHOICES_UI,
     }
-    return render(request, 'worldcup/match_detail.html', context)
+    return render(request, 'match_detail.html', context)
 
 
 def user_predictions(request, username=None):
@@ -99,7 +119,7 @@ def user_predictions(request, username=None):
         predictions = Prediction.objects.filter(user=user).select_related('match')
         is_own = request.user.is_authenticated and request.user == user
     elif request.user.is_authenticated:
-        return redirect('user_predictions_by_username', username=request.user.username)
+        return redirect('champions:user_predictions_by_username', username=request.user.username)
     else:
         return redirect('login')
     user_stats = compute_user_stats(user)
@@ -112,12 +132,12 @@ def user_predictions(request, username=None):
         'position': position,
         'total_users': total_users,
     }
-    return render(request, 'worldcup/user_predictions.html', context)
+    return render(request, 'user_predictions.html', context)
 
 
 @login_required
 def my_predictions(request):
-    return redirect('user_predictions_by_username', username=request.user.username)
+    return redirect('champions:user_predictions_by_username', username=request.user.username)
 
 
 @login_required
@@ -136,7 +156,7 @@ def profile(request):
     friends_with_points = (
         User.objects
         .filter(id__in=friend_ids)
-        .annotate(total_points=Sum('prediction__points'))
+        .annotate(total_points=Sum('champions_predictions__points'))
         .order_by('-total_points', 'username')
     )
 
@@ -160,14 +180,14 @@ def profile(request):
         'invite_url': invite_url,
         'friends_data': friends_data,
     }
-    return render(request, 'worldcup/profile.html', context)
+    return render(request, 'profile.html', context)
 
 
 def leaderboard(request):
     leaderboard_data = (
         User.objects
-        .filter(prediction__isnull=False)
-        .annotate(total_points=Sum('prediction__points'))
+        .filter(champions_predictions__isnull=False)
+        .annotate(total_points=Sum('champions_predictions__points'))
         .order_by('-total_points')[:20]
     )
 
@@ -178,8 +198,8 @@ def leaderboard(request):
             user_stats = PlayerStats.objects.get(user=request.user)
             user_position = list(
                 User.objects
-                .filter(prediction__isnull=False)
-                .annotate(total_points=Sum('prediction__points'))
+                .filter(champions_predictions__isnull=False)
+                .annotate(total_points=Sum('champions_predictions__points'))
                 .order_by('-total_points')
                 .values_list('id', flat=True)
             ).index(request.user.id) + 1
@@ -191,7 +211,7 @@ def leaderboard(request):
         'user_stats': user_stats,
         'user_position': user_position,
     }
-    return render(request, 'worldcup/leaderboard.html', context)
+    return render(request, 'leaderboard.html', context)
 
 
 @login_required
@@ -200,8 +220,11 @@ def predict(request):
         import json
         data = json.loads(request.body)
         match_id = data.get('match_id')
-        home_goals = data.get('home_goals')
-        away_goals = data.get('away_goals')
+        pick = data.get('pick')
+
+        valid_picks = {value for group in PICK_CHOICES_UI for value, _ in group[1]}
+        if pick not in valid_picks:
+            return JsonResponse({'error': 'Invalid pick'}, status=400)
 
         match = get_object_or_404(Match, id=match_id)
 
@@ -216,38 +239,15 @@ def predict(request):
         prediction, created = Prediction.objects.update_or_create(
             user=request.user,
             match=match,
-            defaults={'home_goals': home_goals, 'away_goals': away_goals}
+            defaults={'pick': pick, 'points': 0}
         )
 
-        return JsonResponse({'success': True, 'created': created})
+        return JsonResponse({'success': True, 'created': created, 'pick': pick, 'pick_label': prediction.pick_label})
     return JsonResponse({'error': 'Invalid method'}, status=405)
 
 
-def signup_view(request):
-    if request.method == 'POST':
-        username = request.POST.get('username')
-        password1 = request.POST.get('password1')
-        password2 = request.POST.get('password2')
-
-        if password1 != password2:
-            messages.error(request, 'Passwords do not match')
-            return render(request, 'registration/signup.html')
-
-        if User.objects.filter(username=username).exists():
-            messages.error(request, 'Username already exists')
-            return render(request, 'registration/signup.html')
-
-        user = User.objects.create_user(username=username, password=password1)
-        login(request, user)
-        return redirect('dashboard')
-
-    return render(request, 'registration/signup.html')
-
-
+@login_required
 def generate_invite(request):
-    import secrets
-    if not request.user.is_authenticated:
-        return JsonResponse({'error': 'Unauthorized'}, status=401)
     if request.method == 'POST':
         InvitationCode.objects.filter(creator=request.user, used_by__isnull=True).delete()
         code = secrets.token_urlsafe(8)[:12]
@@ -267,21 +267,21 @@ def accept_invite(request, code):
     if request.method == 'POST' and request.user.is_authenticated:
         if inv.is_expired:
             messages.error(request, 'Este enlace ha expirado.')
-            return redirect('profile')
+            return redirect('champions:profile')
         if request.user == inv.creator:
             messages.error(request, 'No puedes usar tu propio enlace de invitación.')
-            return redirect('profile')
+            return redirect('champions:profile')
         if Friendship.objects.filter(user=request.user, friend=inv.creator).exists():
             messages.info(request, 'Ya son amigos.')
-            return redirect('profile')
+            return redirect('champions:profile')
         Friendship.objects.create(user=request.user, friend=inv.creator)
         Friendship.objects.create(user=inv.creator, friend=request.user)
         inv.used_by = request.user
         inv.used_at = timezone.now()
         inv.save()
         messages.success(request, f'{inv.creator.username} agregado a tus amigos!')
-        return redirect('profile')
-    return render(request, 'worldcup/invite.html', {'inv': inv, 'code': code})
+        return redirect('champions:profile')
+    return render(request, 'invite.html', {'inv': inv, 'code': code})
 
 
 @login_required
@@ -291,4 +291,24 @@ def remove_friend(request, username):
         Friendship.objects.filter(user=request.user, friend=friend).delete()
         Friendship.objects.filter(user=friend, friend=request.user).delete()
         messages.success(request, f'{username} eliminado de tus amigos.')
-    return redirect('profile')
+    return redirect('champions:profile')
+
+
+def signup_view(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password1 = request.POST.get('password1')
+        password2 = request.POST.get('password2')
+
+        if password1 != password2:
+            messages.error(request, 'Las contraseñas no coinciden.')
+            return render(request, 'registration/signup.html')
+
+        if User.objects.filter(username=username).exists():
+            messages.error(request, 'El nombre de usuario ya existe.')
+            return render(request, 'registration/signup.html')
+
+        user = User.objects.create_user(username=username, password=password1)
+        login(request, user)
+        return redirect('champions:dashboard')
+    return render(request, 'registration/signup.html')

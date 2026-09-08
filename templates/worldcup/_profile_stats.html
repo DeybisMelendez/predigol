@@ -46,20 +46,20 @@
             <div>
                 <div class="stats-grid" style="margin-bottom:0;">
                     <div class="stat-tile">
-                        <span class="v" style="color:#00a1d8;">{{ user_stats.pick_hits_3pts }}</span>
-                        <span class="l">Resultado acertado · 3 pts</span>
+                        <span class="v" style="color:#e94560;">{{ user_stats.exact_hits }}</span>
+                        <span class="l">Marcador exacto · 3 pts</span>
                     </div>
                     <div class="stat-tile">
-                        <span class="v" style="color:#001e62;">{{ user_stats.double_chance_hits }}</span>
-                        <span class="l">Doble oportunidad · 1 pt</span>
+                        <span class="v" style="color:#16213e;">{{ user_stats.result_hits }}</span>
+                        <span class="l">Resultado correcto · 2 pts</span>
                     </div>
                     <div class="stat-tile">
-                        <span class="v" style="color:#6c757d;">{{ user_stats.pick_misses_3pts }}</span>
-                        <span class="l">Resultado fallado (3 pts)</span>
+                        <span class="v" style="color:#0f3460;">{{ user_stats.one_goal_hits }}</span>
+                        <span class="l">Un gol acertado · 1 pt</span>
                     </div>
                     <div class="stat-tile">
-                        <span class="v" style="color:#6c757d;">{{ user_stats.double_chance_misses }}</span>
-                        <span class="l">Doble oportunidad fallada</span>
+                        <span class="v" style="color:#6c757d;">{{ user_stats.missed }}</span>
+                        <span class="l">Fallados completamente</span>
                     </div>
                 </div>
                 <div class="streak-row">
@@ -76,8 +76,9 @@
 
     <div class="stats-subsection">
         <h5>Precisión de pronósticos</h5>
-        {% include "_accuracy_row.html" with name="Acierto de resultado (1X2)" value=user_stats.pick_3pt_accuracy %}
-        {% include "_accuracy_row.html" with name="Acierto de doble oportunidad" value=user_stats.double_chance_accuracy %}
+        {% include "_accuracy_row.html" with name="Acierto de equipo ganador" value=user_stats.winner_accuracy %}
+        {% include "_accuracy_row.html" with name="Acierto de empates" value=user_stats.draw_accuracy %}
+        {% include "_accuracy_row.html" with name="Marcador exacto" value=user_stats.exact_accuracy %}
     </div>
     {% else %}
     <p class="empty-note">Aún no hay partidos finalizados para mostrar estadísticas de rendimiento.</p>
@@ -92,15 +93,15 @@
     new Chart(el, {
         type: 'doughnut',
         data: {
-            labels: ['Resultado (3 pts)', 'Doble oportunidad (1 pt)', 'Resultado fallado', 'Doble oportunidad fallada'],
+            labels: ['Marcador exacto', 'Resultado correcto', 'Un gol', 'Fallados'],
             datasets: [{
                 data: [
-                    {{ user_stats.pick_hits_3pts }},
-                    {{ user_stats.double_chance_hits }},
-                    {{ user_stats.pick_misses_3pts }},
-                    {{ user_stats.double_chance_misses }}
+                    {{ user_stats.exact_hits }},
+                    {{ user_stats.result_hits }},
+                    {{ user_stats.one_goal_hits }},
+                    {{ user_stats.missed }}
                 ],
-                backgroundColor: ['#00a1d8', '#001e62', '#6c757d', '#adb5bd'],
+                backgroundColor: ['#e94560', '#16213e', '#0f3460', '#6c757d'],
                 borderWidth: 0
             }]
         },

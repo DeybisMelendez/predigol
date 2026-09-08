@@ -1,0 +1,11 @@
+{% with pct=value|default_if_none:"na" %}
+<div class="accuracy-row">
+    <span class="accuracy-name">{{ name }}</span>
+    <span class="accuracy-bar">
+        <span class="accuracy-fill" style="width:{% if pct == "na" %}0{% else %}{{ pct|floatformat:0 }}{% endif %}%;"></span>
+    </span>
+    <span class="accuracy-pct">
+        {% if pct == "na" %}—{% else %}{{ pct|floatformat:0 }}%{% endif %}
+    </span>
+</div>
+{% endwith %}
